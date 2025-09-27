@@ -1,55 +1,410 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Volleyball Tournaments</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <title>Volleyball Tournaments — Canada</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    /* Basic layout */
+    :root{
+      --sidebar-w: 260px;
+      --accent: #2c7be5;
+      --bg: #f4f6f8;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background:var(--bg);
+      color:#222;
+    }
+    .container{
+      display:flex;
+      min-height:100vh;
+    }
+
+    /* Sidebar */
+    .sidebar{
+      width:var(--sidebar-w);
+      background:linear-gradient(180deg,#1f2a44,#152236);
+      color:#fff;
+      padding:20px;
+      overflow:auto;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:18px;
+    }
+    .brand .logo{
+      width:36px;height:36px;border-radius:6px;background:var(--accent);
+      display:inline-block;
+    }
+    h2.sidebar-title{margin:0 0 10px 0;font-size:18px;font-weight:600}
+    .reset-btn{
+      display:inline-block;
+      padding:6px 10px;
+      margin-bottom:14px;
+      background:transparent;
+      color:#dfe9ff;
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:6px;
+      text-decoration:none;
+      cursor:pointer;
+      font-size:13px;
+    }
+
+    /* Province list & region sublists */
+    .province-list{margin:12px 0;padding:0;list-style:none}
+    .province{
+      margin-bottom:6px;
+    }
+    .province > button{
+      width:100%;
+      background:transparent;
+      color: #e6eefc;
+      border:0;
+      text-align:left;
+      padding:8px 6px;
+      border-radius:6px;
+      cursor:pointer;
+      font-size:15px;
+    }
+    .province > button:hover{background:rgba(255,255,255,0.03)}
+    .regions{
+      margin:6px 0 12px 8px;
+      padding-left:10px;
+      display:none;
+    }
+    .region-button{
+      display:block;
+      width:100%;
+      background:transparent;
+      color:#cfe3ff;
+      border:0;
+      text-align:left;
+      padding:6px 8px;
+      border-radius:6px;
+      cursor:pointer;
+      font-size:14px;
+    }
+    .region-button:hover{background:rgba(255,255,255,0.02)}
+
+    /* Main content */
+    .content{
+      flex:1;
+      padding:28px;
+    }
+    header.page-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:18px;
+    }
+    header.page-head h1{margin:0;font-size:20px}
+    .filters{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .selected-indicator{
+      padding:6px 10px;
+      border-radius:8px;
+      background:white;
+      box-shadow:0 1px 3px rgba(0,0,0,0.08);
+      font-size:13px;
+    }
+
+    /* Table styles */
+    .table-wrap{
+      background:white;
+      border-radius:8px;
+      padding:14px;
+      box-shadow:0 4px 18px rgba(16,24,40,0.06);
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+    }
+    thead th{
+      text-align:left;
+      font-size:13px;
+      padding:10px 12px;
+      border-bottom:1px solid #eef2f7;
+      color:#374151;
+      background:transparent;
+      position:sticky;
+      top:0;
+      z-index:1;
+    }
+    tbody td{
+      padding:12px;
+      border-bottom:1px solid #f1f5f9;
+      vertical-align:middle;
+      font-size:14px;
+    }
+    tbody tr:hover{background:#fcfdff}
+    .tag{
+      display:inline-block;
+      padding:4px 8px;
+      border-radius:999px;
+      font-size:12px;
+      background:#eef2ff;
+      color:#084298;
+    }
+    a.link { color:var(--accent); text-decoration:none }
+    @media(max-width:880px){
+      .sidebar{display:none}
+      body{padding:10px}
+    }
+  </style>
 </head>
 <body>
   <div class="container">
     <!-- Sidebar -->
-    <nav class="sidebar">
-      <h2>Categories</h2>
-      <ul>
-        <li><a href="#">Open Gym</a></li>
-        <li><a href="#">Recreational Tournaments</a></li>
-        <li><a href="#">Competitive Tournaments</a></li>
-        <li><a href="#">By Region</a></li>
+    <aside class="sidebar" aria-label="Regions and provinces">
+      <div class="brand">
+        <span class="logo" aria-hidden="true"></span>
+        <div>
+          <div style="font-weight:700">Volleyball Canada</div>
+          <div style="font-size:12px;color:#c8dbff">Find tournaments by region</div>
+        </div>
+      </div>
+
+      <button id="show-all" class="reset-btn" title="Show all events">🔁 Show All Canada</button>
+
+      <h2 class="sidebar-title">Provinces & Regions</h2>
+      <ul class="province-list" id="provinceList">
+        <!-- Provinces will be inserted by JS for easier editing -->
       </ul>
-    </nav>
+
+      <div style="margin-top:20px;font-size:12px;color:#cfe3ff">
+        Tip: click a province to expand regions, then click a region to filter the list.
+      </div>
+    </aside>
 
     <!-- Main content -->
     <main class="content">
-      <h1>Upcoming Volleyball Events</h1>
-      
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Event</th>
-            <th>Region</th>
-            <th>Level</th>
-            <th>Registration</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Oct 12, 2025</td>
-            <td>Fall Recreational 4v4</td>
-            <td>Toronto, ON</td>
-            <td>Recreational</td>
-            <td><a href="#">Register</a></td>
-          </tr>
-          <tr>
-            <td>Nov 5, 2025</td>
-            <td>Open Gym Night</td>
-            <td>Montreal, QC</td>
-            <td>Open Gym</td>
-            <td><a href="#">Details</a></td>
-          </tr>
-        </tbody>
-      </table>
+      <header class="page-head">
+        <h1>Upcoming Volleyball Events (Canada)</h1>
+        <div class="filters">
+          <div class="selected-indicator" id="currentFilter">Showing: <strong>All Canada</strong></div>
+        </div>
+      </header>
+
+      <section class="table-wrap" aria-label="Events table">
+        <table id="eventsTable" role="table" aria-describedby="tabledesc">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Event</th>
+              <th>City / Region</th>
+              <th>Province</th>
+              <th>Level</th>
+              <th>Registration</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Sample rows (expand with your own events). Use data-province and data-region for filtering -->
+            <tr data-province="Ontario" data-region="Toronto">
+              <td>Oct 12, 2025</td>
+              <td>Fall Recreational 4v4</td>
+              <td>Toronto</td>
+              <td>Ontario</td>
+              <td><span class="tag">Recreational</span></td>
+              <td><a class="link" href="#">Register</a></td>
+            </tr>
+
+            <tr data-province="Quebec" data-region="Montreal">
+              <td>Nov 5, 2025</td>
+              <td>Open Gym Night</td>
+              <td>Montreal</td>
+              <td>Quebec</td>
+              <td><span class="tag">Open Gym</span></td>
+              <td><a class="link" href="#">Details</a></td>
+            </tr>
+
+            <tr data-province="British Columbia" data-region="Vancouver">
+              <td>Sep 30, 2025</td>
+              <td>Vancouver Beach Tourney</td>
+              <td>Vancouver</td>
+              <td>British Columbia</td>
+              <td><span class="tag">Competitive</span></td>
+              <td><a class="link" href="#">Register</a></td>
+            </tr>
+
+            <tr data-province="Alberta" data-region="Calgary">
+              <td>Oct 18, 2025</td>
+              <td>YYC Indoor Slam</td>
+              <td>Calgary</td>
+              <td>Alberta</td>
+              <td><span class="tag">Recreational</span></td>
+              <td><a class="link" href="#">Register</a></td>
+            </tr>
+
+            <tr data-province="Manitoba" data-region="Winnipeg">
+              <td>Nov 2, 2025</td>
+              <td>Winnipeg Winter Classic</td>
+              <td>Winnipeg</td>
+              <td>Manitoba</td>
+              <td><span class="tag">Competitive</span></td>
+              <td><a class="link" href="#">Details</a></td>
+            </tr>
+
+            <tr data-province="Nova Scotia" data-region="Halifax">
+              <td>Oct 25, 2025</td>
+              <td>Halifax Co-Ed 6s</td>
+              <td>Halifax</td>
+              <td>Nova Scotia</td>
+              <td><span class="tag">Recreational</span></td>
+              <td><a class="link" href="#">Register</a></td>
+            </tr>
+
+            <tr data-province="Saskatchewan" data-region="Saskatoon">
+              <td>Oct 31, 2025</td>
+              <td>Saskatoon Halloween Cup</td>
+              <td>Saskatoon</td>
+              <td>Saskatchewan</td>
+              <td><span class="tag">Recreational</span></td>
+              <td><a class="link" href="#">Details</a></td>
+            </tr>
+
+            <!-- Add more rows here -->
+          </tbody>
+        </table>
+      </section>
     </main>
   </div>
+
+  <script>
+    /*******************************
+     * Province -> Regions mapping *
+     * Edit this object to add or change provinces and their regions.
+     *******************************/
+    const provinces = {
+      "Ontario": ["Toronto", "Ottawa", "Hamilton", "Waterloo Region", "London"],
+      "Quebec": ["Montreal", "Quebec City", "Sherbrooke", "Gatineau"],
+      "British Columbia": ["Vancouver", "Victoria", "Kelowna"],
+      "Alberta": ["Calgary", "Edmonton", "Red Deer"],
+      "Manitoba": ["Winnipeg"],
+      "Saskatchewan": ["Saskatoon", "Regina"],
+      "Nova Scotia": ["Halifax", "Sydney"],
+      "New Brunswick": ["Moncton", "Fredericton", "Saint John"],
+      "Prince Edward Island": ["Charlottetown"],
+      "Newfoundland & Labrador": ["St. John's"],
+      "Yukon": ["Whitehorse"],
+      "Northwest Territories": ["Yellowknife"],
+      "Nunavut": ["Iqaluit"]
+    };
+
+    // Build the sidebar UI
+    const provinceListEl = document.getElementById('provinceList');
+
+    Object.keys(provinces).forEach(prov => {
+      const li = document.createElement('li');
+      li.className = 'province';
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.innerText = prov;
+      btn.setAttribute('aria-expanded', 'false');
+
+      const regionsContainer = document.createElement('div');
+      regionsContainer.className = 'regions';
+      regionsContainer.setAttribute('role', 'group');
+
+      provinces[prov].forEach(region => {
+        const rbtn = document.createElement('button');
+        rbtn.className = 'region-button';
+        rbtn.type = 'button';
+        rbtn.innerText = region;
+        rbtn.dataset.province = prov;
+        rbtn.dataset.region = region;
+        // click handler for region filter
+        rbtn.addEventListener('click', () => applyFilter(prov, region));
+        regionsContainer.appendChild(rbtn);
+      });
+
+      // toggle regions display
+      btn.addEventListener('click', () => {
+        const expanded = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', String(!expanded));
+        regionsContainer.style.display = expanded ? 'none' : 'block';
+      });
+
+      li.appendChild(btn);
+      li.appendChild(regionsContainer);
+      provinceListEl.appendChild(li);
+    });
+
+    // Show-all button
+    document.getElementById('show-all').addEventListener('click', () => applyFilter(null, null));
+
+    // Apply filter: province and region can be null (meaning show all)
+    const eventsTable = document.getElementById('eventsTable');
+    const tableBody = eventsTable.querySelector('tbody');
+    const currentFilterEl = document.getElementById('currentFilter');
+
+    function applyFilter(province, region) {
+      // Update UI indicator
+      if (!province) {
+        currentFilterEl.innerHTML = 'Showing: <strong>All Canada</strong>';
+      } else if (province && !region) {
+        currentFilterEl.innerHTML = `Showing: <strong>${province}</strong> (all regions)`;
+      } else {
+        currentFilterEl.innerHTML = `Showing: <strong>${region}</strong>, ${province}`;
+      }
+
+      // Loop rows and show/hide
+      const rows = tableBody.querySelectorAll('tr');
+      rows.forEach(row => {
+        const rowProvince = row.dataset.province || '';
+        const rowRegion = row.dataset.region || '';
+
+        // Matching logic
+        let show = true;
+        if (province && region) {
+          show = (rowProvince === province && rowRegion === region);
+        } else if (province && !region) {
+          show = (rowProvince === province);
+        } else {
+          show = true; // show all
+        }
+
+        row.style.display = show ? '' : 'none';
+      });
+
+      // If no visible rows, show a friendly message row
+      showEmptyMessageIfNeeded();
+      // scroll table into view
+      eventsTable.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+
+    function showEmptyMessageIfNeeded() {
+      // remove any previous "no-results" row
+      const prev = tableBody.querySelector('tr.no-results');
+      if (prev) prev.remove();
+
+      const visible = Array.from(tableBody.querySelectorAll('tr')).some(r => r.style.display !== 'none');
+      if (!visible) {
+        const tr = document.createElement('tr');
+        tr.className = 'no-results';
+        const td = document.createElement('td');
+        td.colSpan = 6;
+        td.style.padding = '18px';
+        td.style.textAlign = 'center';
+        td.textContent = 'No events found for this region. You can add events or try a different region.';
+        tr.appendChild(td);
+        tableBody.appendChild(tr);
+      }
+    }
+
+    // initial state is show all
+    applyFilter(null, null);
+
+    
+  </script>
 </body>
 </html>
