@@ -65,6 +65,12 @@
       font-size: 1rem;
     }
 
+    .checkbox-group {
+      display: flex;
+      gap: 15px;
+      margin-top: 5px;
+    }
+
     button {
       background: orange;
       color: white;
@@ -104,11 +110,15 @@
       <label for="city">City:</label>
       <input type="text" id="city" name="city" required>
 
-      <label for="location">Venue / Exact Location:</label>
-      <input type="text" id="location" name="location" required>
+      <label for="address">Address:</label>
+      <input type="text" id="address" name="address" required>
 
-      <label for="details">Details:</label>
-      <textarea id="details" name="details" rows="4" required></textarea>
+      <label>Level:</label>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="level" value="Open Gym"> Open Gym</label>
+        <label><input type="checkbox" name="level" value="Competitive"> Competitive</label>
+        <label><input type="checkbox" name="level" value="Recreative"> Recreative</label>
+      </div>
 
       <label for="registration">Registration Info (link or instructions):</label>
       <textarea id="registration" name="registration" rows="3" required></textarea>
@@ -128,7 +138,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
 
   <script>
-    // Your Firebase config
     const firebaseConfig = {
       apiKey: "YOUR_API_KEY",
       authDomain: "YOUR_AUTH_DOMAIN",
@@ -138,13 +147,15 @@
       appId: "YOUR_APP_ID"
     };
 
-    // Initialize Firebase
     const app = firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Form submission
     document.getElementById('tournamentForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+
+      // Collect all checked levels
+      const levelCheckboxes = document.querySelectorAll('input[name="level"]:checked');
+      const levels = Array.from(levelCheckboxes).map(cb => cb.value);
 
       const tournamentData = {
         name: document.getElementById('name').value,
@@ -152,8 +163,8 @@
         province: document.getElementById('province').value,
         region: document.getElementById('region').value,
         city: document.getElementById('city').value,
-        location: document.getElementById('location').value,
-        details: document.getElementById('details').value,
+        address: document.getElementById('address').value,
+        level: levels.join(", "),
         registration: document.getElementById('registration').value,
         contactName: document.getElementById('contactName').value,
         contactPhone: document.getElementById('contactPhone').value,
