@@ -80,14 +80,21 @@
     table tr:nth-child(even) {
       background: #f9f9f9;
     }
+
+    /* Empty message */
+    .empty-message {
+      text-align: center;
+      padding: 20px;
+      font-style: italic;
+      color: #666;
+    }
   </style>
 </head>
 <body>
   <!-- Header -->
   <header class="site-header">
     <h1>Volleyball Tournaments in Canada</h1>
-    <a href="https://docs.google.com/forms/d/e/1FAIpQLScM7Pyn9Udc0EZcG2yJ-YpqCVqny-dqTNXOGwYQSyEyGS1Nwg/viewform?usp=sharing&ouid=111050342805730174946
-" target="_blank" class="submit-btn">
+    <a id="submitBtn" href="#" target="_blank" class="submit-btn">
       Submit Your Event
     </a>
   </header>
@@ -127,12 +134,15 @@
         <!-- Events will load here -->
       </tbody>
     </table>
+    <div id="emptyMessage" class="empty-message" style="display: none;">
+      No upcoming tournaments available.
+    </div>
   </div>
 
-  <script>
-    // Replace with your published Google Sheet CSV link
-    const sheetUrl = "https://docs.google.com/spreadsheets/d/1UNuPz22hDFkdUjWJQWkeornQHfaWtsXhYzX5g8g_Mvg/edit?usp=sharing";
+  <!-- Config file -->
+  <script src="config.js"></script>
 
+  <script>
     function csvToJSON(csv) {
       const lines = csv.split("\n").filter(l => l.trim() !== "");
       const headers = lines[0].split(",");
@@ -146,10 +156,17 @@
 
     let eventsData = [];
 
-    fetch(sheetUrl)
+    // Set the submit button link
+    document.getElementById("submitBtn").href = CONFIG.formLink;
+
+    // Fetch events from Google Sheet
+    fetch(CONFIG.sheetUrl)
       .then(res => res.text())
       .then(csv => {
         const data = csvToJSON(csv);
+        const today = new Date();
+        today.setHours(0,0,0,0);
+
         eventsData = data.map(ev => ({
           date: ev["Date"],
           name: ev["Tournament Name"],
@@ -158,28 +175,43 @@
           region: ev["Region"],
           level: ev["Level"],
           registration: ev["Registration Link"]
-        }));
+        }))
+        .filter(ev => {
+          if (!ev.date) return false;
+          const eventDate = new Date(ev.date);
+          return eventDate >= today;
+        })
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+
         renderTable(eventsData);
       });
 
     function renderTable(data) {
       const tbody = document.querySelector("#eventsTable tbody");
+      const emptyMessage = document.getElementById("emptyMessage");
+
       tbody.innerHTML = "";
-      data.forEach(ev => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${ev.date || ""}</td>
-          <td>${ev.name || ""}</td>
-          <td>${ev.city || ""}</td>
-          <td>${ev.province || ""}</td>
-          <td>${ev.region || ""}</td>
-          <td>${ev.level || ""}</td>
-          <td>${ev.registration ? `<a href="${ev.registration}" target="_blank">Register</a>` : ""}</td>
-        `;
-        tbody.appendChild(tr);
-      });
+      if (data.length === 0) {
+        emptyMessage.style.display = "block";
+      } else {
+        emptyMessage.style.display = "none";
+        data.forEach(ev => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${ev.date || ""}</td>
+            <td>${ev.name || ""}</td>
+            <td>${ev.city || ""}</td>
+            <td>${ev.province || ""}</td>
+            <td>${ev.region || ""}</td>
+            <td>${ev.level || ""}</td>
+            <td>${ev.registration ? `<a href="${ev.registration}" target="_blank">Register</a>` : ""}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
     }
 
+    // Region filter
     document.getElementById("regionFilter").addEventListener("change", e => {
       const region = e.target.value;
       if (region === "all") {
