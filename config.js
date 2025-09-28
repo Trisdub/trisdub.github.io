@@ -1,5 +1,10 @@
-// config.js
-const CONFIG = {
-  formLink: "https://docs.google.com/forms/d/e/1FAIpQLScM7Pyn9Udc0EZcG2yJ-YpqCVqny-dqTNXOGwYQSyEyGS1Nwg/viewform?usp=sharing&ouid=111050342805730174946",
-  sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQAWka7mgkzgc4-ijO-luKphGZj4zWNSzGbe-tFBORU1_20nz92foR27ZXeYh-UUgzQsoaCapFYnbVX/pub?output=csv"
+// Firebase configuration (modular SDK v9+)
+export const firebaseConfig = {
+  apiKey: "AIzaSyCfVProG4-iZ8z4r869oiBHB7OX4Fl3lMU",
+  authDomain: "volleyball-tourneys.firebaseapp.com",
+  projectId: "volleyball-tourneys",
+  storageBucket: "volleyball-tourneys.firebasestorage.app",
+  messagingSenderId: "652764056781",
+  appId: "1:652764056781:web:70f90b5a6f5357aff16d84",
+  measurementId: "G-HJF63771D7"
 };
