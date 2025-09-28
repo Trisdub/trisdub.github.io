@@ -11,15 +11,42 @@
       margin: 0;
       padding: 0;
       background: #f4f4f4;
+      display: flex;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 200px;
+      background: #fff;
+      padding: 20px;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      height: 100vh;
+      box-sizing: border-box;
+    }
+
+    .sidebar h2 {
+      font-size: 18px;
+      margin-top: 0;
+    }
+
+    .sidebar select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    /* Main content */
+    .main {
+      flex: 1;
+      padding: 20px;
     }
 
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 15px 20px;
-      background: #fff;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding-bottom: 20px;
     }
 
     .home-btn {
@@ -34,12 +61,6 @@
 
     .home-btn:hover {
       background-color: darkorange;
-    }
-
-    .container {
-      max-width: 1000px;
-      margin: 40px auto;
-      padding: 0 20px;
     }
 
     table {
@@ -72,12 +93,30 @@
   </style>
 </head>
 <body>
-  <header>
-    <h1>Volleyball Tournaments</h1>
-    <a href="submit.html" class="home-btn">Submit Your Event</a>
-  </header>
 
-  <div class="container">
+  <div class="sidebar">
+    <h2>Filter by Province</h2>
+    <select id="provinceFilter">
+      <option value="">All Provinces</option>
+      <option value="Alberta">Alberta</option>
+      <option value="British Columbia">British Columbia</option>
+      <option value="Manitoba">Manitoba</option>
+      <option value="New Brunswick">New Brunswick</option>
+      <option value="Newfoundland and Labrador">Newfoundland and Labrador</option>
+      <option value="Nova Scotia">Nova Scotia</option>
+      <option value="Ontario">Ontario</option>
+      <option value="Prince Edward Island">Prince Edward Island</option>
+      <option value="Quebec">Quebec</option>
+      <option value="Saskatchewan">Saskatchewan</option>
+    </select>
+  </div>
+
+  <div class="main">
+    <header>
+      <h1>Volleyball Tournaments</h1>
+      <a href="submit.html" class="home-btn">Submit Your Event</a>
+    </header>
+
     <table id="tournamentsTable">
       <thead>
         <tr>
@@ -91,9 +130,7 @@
           <th>Registration</th>
         </tr>
       </thead>
-      <tbody id="tournamentsBody">
-        <!-- Tournament rows will be inserted here -->
-      </tbody>
+      <tbody id="tournamentsBody"></tbody>
     </table>
     <div id="noEvents" class="no-events" style="display:none;">No upcoming tournaments</div>
   </div>
@@ -117,8 +154,8 @@
 
     const tableBody = document.getElementById('tournamentsBody');
     const noEventsDiv = document.getElementById('noEvents');
+    const provinceFilter = document.getElementById('provinceFilter');
 
-    // Load tournaments
     async function loadTournaments() {
       tableBody.innerHTML = '';
       const today = new Date().toISOString().split('T')[0];
@@ -129,10 +166,11 @@
           .get();
 
         let hasUpcoming = false;
+        const selectedProvince = provinceFilter.value;
 
         snapshot.forEach(doc => {
           const data = doc.data();
-          if(data.date >= today) {
+          if(data.date >= today && (selectedProvince === '' || data.province === selectedProvince)) {
             hasUpcoming = true;
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -158,6 +196,10 @@
       }
     }
 
+    // Reload table when filter changes
+    provinceFilter.addEventListener('change', loadTournaments);
+
+    // Initial load
     loadTournaments();
   </script>
 </body>
