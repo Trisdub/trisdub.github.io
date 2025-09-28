@@ -35,10 +35,26 @@
       border-radius: 6px;
       font-weight: bold;
       transition: background 0.2s ease;
+      margin-right: 10px;
     }
 
     .submit-btn:hover {
       background: #005fa3;
+    }
+
+    .refresh-btn {
+      background: #28a745;
+      color: white;
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-weight: bold;
+      transition: background 0.2s ease;
+      cursor: pointer;
+    }
+
+    .refresh-btn:hover {
+      background: #1e7e34;
     }
 
     /* Content */
@@ -81,7 +97,6 @@
       background: #f9f9f9;
     }
 
-    /* Empty message */
     .empty-message {
       text-align: center;
       padding: 20px;
@@ -94,9 +109,10 @@
   <!-- Header -->
   <header class="site-header">
     <h1>Volleyball Tournaments in Canada</h1>
-    <a id="submitBtn" href="#" target="_blank" class="submit-btn">
-      Submit Your Event
-    </a>
+    <div>
+      <a id="submitBtn" href="#" target="_blank" class="submit-btn">Submit Your Event</a>
+      <button id="refreshBtn" class="refresh-btn">Refresh Events</button>
+    </div>
   </header>
 
   <!-- Content -->
@@ -155,36 +171,40 @@
 
     let eventsData = [];
 
+    const submitBtn = document.getElementById("submitBtn");
+    const refreshBtn = document.getElementById("refreshBtn");
+    const regionFilter = document.getElementById("regionFilter");
+
     // Set the submit button link
-    document.getElementById("submitBtn").href = CONFIG.formLink;
+    submitBtn.href = CONFIG.formLink;
 
-    // Fetch events from Google Sheet
-    fetch(CONFIG.sheetUrl)
-      .then(res => res.text())
-      .then(csv => {
-        const data = csvToJSON(csv);
-        const today = new Date();
-        today.setHours(0,0,0,0);
+    function fetchEvents() {
+      fetch(CONFIG.sheetUrl + "?t=" + new Date().getTime()) // no-cache
+        .then(res => res.text())
+        .then(csv => {
+          const data = csvToJSON(csv);
+          const today = new Date();
+          today.setHours(0,0,0,0);
 
-        eventsData = data.map(ev => ({
-          date: ev["Date"],
-          name: ev["Tournament Name"],
-          city: ev["City"],
-          province: ev["Province"],
-          region: ev["Region"],
-          level: ev["Level"],
-          registration: ev["Registration Link"]
-        }))
-        .filter(ev => {
-          if (!ev.date) return false;
-          const eventDate = new Date(ev.date);
-          return eventDate >= today;
-        })
-        .sort((a, b) => new Date(a.date) - new Date(b.date));
+          eventsData = data.map(ev => ({
+            date: ev["Date"],
+            name: ev["Tournament Name"],
+            city: ev["City"],
+            province: ev["Province"],
+            region: ev["Region"],
+            level: ev["Level"],
+            registration: ev["Registration Link"]
+          }))
+          .filter(ev => {
+            if (!ev.date) return false;
+            const eventDate = new Date(ev.date);
+            return eventDate >= today;
+          })
+          .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-        // Always render the table or empty message immediately
-        renderTable(eventsData);
-      });
+          renderTable(eventsData);
+        });
+    }
 
     function renderTable(data) {
       const table = document.getElementById("eventsTable");
@@ -194,11 +214,11 @@
       tbody.innerHTML = "";
 
       if (!data || data.length === 0) {
-        table.style.display = "none"; // hide table
-        emptyMessage.style.display = "block"; // show message
+        table.style.display = "none"; 
+        emptyMessage.style.display = "block"; 
       } else {
-        table.style.display = "table"; // show table
-        emptyMessage.style.display = "none"; // hide message
+        table.style.display = "table"; 
+        emptyMessage.style.display = "none"; 
         data.forEach(ev => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
@@ -216,7 +236,7 @@
     }
 
     // Region filter
-    document.getElementById("regionFilter").addEventListener("change", e => {
+    regionFilter.addEventListener("change", e => {
       const region = e.target.value;
       if (region === "all") {
         renderTable(eventsData);
@@ -224,6 +244,12 @@
         renderTable(eventsData.filter(ev => ev.province === region || ev.region === region));
       }
     });
+
+    // Refresh button
+    refreshBtn.addEventListener("click", fetchEvents);
+
+    // Initial fetch on page load
+    fetchEvents();
   </script>
 </body>
 </html>
