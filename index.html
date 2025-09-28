@@ -187,14 +187,18 @@
       });
 
     function renderTable(data) {
-      const tbody = document.querySelector("#eventsTable tbody");
+      const table = document.getElementById("eventsTable");
+      const tbody = table.querySelector("tbody");
       const emptyMessage = document.getElementById("emptyMessage");
 
       tbody.innerHTML = "";
+
       if (data.length === 0) {
-        emptyMessage.style.display = "block";
+        table.style.display = "none";   // hide table
+        emptyMessage.style.display = "block"; // show message
       } else {
-        emptyMessage.style.display = "none";
+        table.style.display = "table";  // show table
+        emptyMessage.style.display = "none"; // hide message
         data.forEach(ev => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
