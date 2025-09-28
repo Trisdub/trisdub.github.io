@@ -2,20 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Volleyball Tournaments in Canada</title>
+  <title>Volleyball Tournaments</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="site-header">
     <h1>Volleyball Tournaments in Canada</h1>
     <div>
-      <a id="submitBtn" href="#" target="_blank" class="submit-btn">Submit Your Event</a>
+      <a href="submit.html" class="submit-btn">Submit Your Event</a>
       <button id="refreshBtn" class="refresh-btn">Refresh Events</button>
     </div>
   </header>
 
   <div class="content">
-    <h2>Upcoming Tournaments</h2>
     <label for="regionFilter">Filter by Province/Region:</label>
     <select id="regionFilter">
       <option value="all">All Regions</option>
@@ -53,66 +52,39 @@
     </div>
   </div>
 
-  <script src="config.js"></script>
-  <script>
-    // Simple CSV parser
-    function csvToJSON(csv) {
-      const lines = csv.split("\n").filter(l => l.trim() !== "");
-      const headers = lines[0].split(",");
-      return lines.slice(1).map(line => {
-        const values = line.split(",");
-        let obj = {};
-        headers.forEach((h, i) => obj[h.trim()] = values[i]?.trim());
-        return obj;
-      });
-    }
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+    import { firebaseConfig } from './config.js';
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
     let eventsData = [];
 
-    const submitBtn = document.getElementById("submitBtn");
-    const refreshBtn = document.getElementById("refreshBtn");
     const regionFilter = document.getElementById("regionFilter");
+    const refreshBtn = document.getElementById("refreshBtn");
 
-    submitBtn.href = CONFIG.formLink;
+    async function fetchEvents() {
+      const today = new Date();
+      today.setHours(0,0,0,0);
 
-    function fetchEvents() {
-      fetch(CONFIG.sheetUrl + "?t=" + new Date().getTime())
-        .then(res => res.text())
-        .then(csv => {
-          const data = csvToJSON(csv);
-          const today = new Date();
-          today.setHours(0,0,0,0);
+      try {
+        const snapshot = await getDocs(query(collection(db, "tournaments"), orderBy("date")));
+        eventsData = snapshot.docs.map(doc => doc.data())
+          .filter(ev => new Date(ev.date) >= today);
 
-          eventsData = data.map(ev => ({
-            date: ev["Date (YYYY/MM/DD)"],
-            name: ev["Event name"],
-            city: ev["City"],
-            province: ev["Province"],
-            region: ev["Region"],
-            level: ev["Level"],
-            registration: ev["Registration (Link or Email or both)"],
-            address: ev["Address"]
-          }))
-          .filter(ev => {
-            if (!ev.date) return false;
-            const eventDate = new Date(ev.date);
-            return eventDate >= today;
-          })
-          .sort((a,b) => new Date(a.date) - new Date(b.date));
-
-          renderTable(eventsData);
-        })
-        .catch(err => {
-          console.error("Error fetching events:", err);
-          document.getElementById("emptyMessage").innerText = "Unable to load tournaments.";
-          document.getElementById("emptyMessage").style.display = "block";
-        });
+        renderTable(eventsData);
+      } catch (err) {
+        console.error(err);
+        document.getElementById("emptyMessage").innerText = "Unable to load tournaments.";
+        document.getElementById("emptyMessage").style.display = "block";
+      }
     }
 
     function renderTable(data) {
       const tbody = document.getElementById("eventsTable").querySelector("tbody");
       const emptyMessage = document.getElementById("emptyMessage");
-
       tbody.innerHTML = "";
 
       if (!data || data.length === 0) {
@@ -139,17 +111,13 @@
 
     regionFilter.addEventListener("change", e => {
       const region = e.target.value;
-      if (region === "all") {
-        renderTable(eventsData);
-      } else {
-        renderTable(eventsData.filter(ev => ev.province === region || ev.region === region));
-      }
+      if (region === "all") renderTable(eventsData);
+      else renderTable(eventsData.filter(ev => ev.province === region || ev.region === region));
     });
 
     refreshBtn.addEventListener("click", fetchEvents);
 
-    // Fetch events on page load
-    fetchEvents();
+    fetchEvents(); // initial load
   </script>
 </body>
 </html>
