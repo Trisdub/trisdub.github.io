@@ -61,3 +61,19 @@ table tr:nth-child(even) { background: #f9f9f9; }
   font-style: italic;
   color: #666;
 }
+/* Style for the "Submit Your Event" button */
+.submit-btn {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #ff6600;  /* Orange color */
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  border-radius: 8px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.submit-btn:hover {
+  background-color: #e65c00;
+  transform: scale(1.05);
+}
