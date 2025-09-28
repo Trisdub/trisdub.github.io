@@ -12,7 +12,6 @@
       color: #333;
     }
 
-    /* Header */
     .site-header {
       display: flex;
       justify-content: space-between;
@@ -57,7 +56,6 @@
       background: #1e7e34;
     }
 
-    /* Content */
     .content {
       max-width: 1000px;
       margin: 20px auto;
@@ -106,7 +104,6 @@
   </style>
 </head>
 <body>
-  <!-- Header -->
   <header class="site-header">
     <h1>Volleyball Tournaments in Canada</h1>
     <div>
@@ -115,7 +112,6 @@
     </div>
   </header>
 
-  <!-- Content -->
   <div class="content">
     <h2>Upcoming Tournaments</h2>
     <label for="regionFilter">Filter by Province/Region:</label>
@@ -138,7 +134,7 @@
       <thead>
         <tr>
           <th>Date</th>
-          <th>Name</th>
+          <th>Event Name</th>
           <th>City</th>
           <th>Province</th>
           <th>Region</th>
@@ -154,7 +150,6 @@
     </div>
   </div>
 
-  <!-- Config file -->
   <script src="config.js"></script>
 
   <script>
@@ -175,11 +170,10 @@
     const refreshBtn = document.getElementById("refreshBtn");
     const regionFilter = document.getElementById("regionFilter");
 
-    // Set the submit button link
     submitBtn.href = CONFIG.formLink;
 
     function fetchEvents() {
-      fetch(CONFIG.sheetUrl + "?t=" + new Date().getTime()) // no-cache
+      fetch(CONFIG.sheetUrl + "?t=" + new Date().getTime())
         .then(res => res.text())
         .then(csv => {
           const data = csvToJSON(csv);
@@ -187,20 +181,20 @@
           today.setHours(0,0,0,0);
 
           eventsData = data.map(ev => ({
-            date: ev["Date"],
-            name: ev["Tournament Name"],
+            date: ev["Date (YYYY/MM/DD)"],    // updated column header
+            name: ev["Event name"],            // updated
             city: ev["City"],
             province: ev["Province"],
             region: ev["Region"],
             level: ev["Level"],
-            registration: ev["Registration Link"]
+            registration: ev["Registration (Link or Email or both)"] // updated
           }))
           .filter(ev => {
             if (!ev.date) return false;
             const eventDate = new Date(ev.date);
             return eventDate >= today;
           })
-          .sort((a, b) => new Date(a.date) - new Date(b.date));
+          .sort((a,b) => new Date(a.date) - new Date(b.date));
 
           renderTable(eventsData);
         });
@@ -214,11 +208,11 @@
       tbody.innerHTML = "";
 
       if (!data || data.length === 0) {
-        table.style.display = "none"; 
-        emptyMessage.style.display = "block"; 
+        table.style.display = "none";
+        emptyMessage.style.display = "block";
       } else {
-        table.style.display = "table"; 
-        emptyMessage.style.display = "none"; 
+        table.style.display = "table";
+        emptyMessage.style.display = "none";
         data.forEach(ev => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
@@ -235,7 +229,6 @@
       }
     }
 
-    // Region filter
     regionFilter.addEventListener("change", e => {
       const region = e.target.value;
       if (region === "all") {
@@ -245,11 +238,9 @@
       }
     });
 
-    // Refresh button
     refreshBtn.addEventListener("click", fetchEvents);
 
-    // Initial fetch on page load
+    // initial fetch
     fetchEvents();
   </script>
 </body>
-</html>
