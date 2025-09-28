@@ -27,7 +27,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
     import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
-    import { firebaseConfig } from './config.js';
+    import { firebaseConfig } from './config.js'; // if you have your config in config.js
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -40,7 +40,7 @@
         province: form.province.value,
         city: form.city.value,
         region: form.region.value,
-        date: form.date.value, // YYYY-MM-DD
+        date: form.date.value,
         level: form.level.value,
         registration: form.registration.value,
         address: form.address.value
@@ -49,7 +49,7 @@
         await addDoc(collection(db, "tournaments"), data);
         alert("Event submitted successfully!");
         form.reset();
-      } catch (err) {
+      } catch(err) {
         console.error(err);
         alert("Error submitting event.");
       }
