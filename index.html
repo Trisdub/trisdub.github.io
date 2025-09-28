@@ -118,7 +118,7 @@
       <option value="Territories">Territories</option>
     </select>
 
-    <table id="eventsTable">
+    <table id="eventsTable" style="display: none;">
       <thead>
         <tr>
           <th>Date</th>
@@ -130,10 +130,9 @@
           <th>Registration</th>
         </tr>
       </thead>
-      <tbody>
-        <!-- Events will load here -->
-      </tbody>
+      <tbody></tbody>
     </table>
+
     <div id="emptyMessage" class="empty-message" style="display: none;">
       No upcoming tournaments available.
     </div>
@@ -183,6 +182,7 @@
         })
         .sort((a, b) => new Date(a.date) - new Date(b.date));
 
+        // Show table or empty message immediately on first load
         renderTable(eventsData);
       });
 
@@ -194,11 +194,11 @@
       tbody.innerHTML = "";
 
       if (data.length === 0) {
-        table.style.display = "none";   // hide table
-        emptyMessage.style.display = "block"; // show message
+        table.style.display = "none";   
+        emptyMessage.style.display = "block"; 
       } else {
-        table.style.display = "table";  // show table
-        emptyMessage.style.display = "none"; // hide message
+        table.style.display = "table";  
+        emptyMessage.style.display = "none"; 
         data.forEach(ev => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
