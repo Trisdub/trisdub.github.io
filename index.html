@@ -1,116 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Volleyball Tournaments — Canada</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8">
+  <title>Volleyball Tournaments in Canada</title>
   <style>
-    :root{--sidebar-w:260px;--accent:#2c7be5;--bg:#f4f6f8;}
-    body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:#222;}
-    .container{display:flex;min-height:100vh}
-
-    /* Sidebar */
-    .sidebar{width:var(--sidebar-w);background:#1f2a44;color:#fff;padding:20px;overflow:auto}
-    .province-list{list-style:none;padding:0}
-    .province{margin-bottom:6px}
-    .province>button,.region-button{
-      background:none;border:0;color:#fff;cursor:pointer;text-align:left;padding:6px;width:100%;
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f9;
+      color: #333;
     }
-    .regions{display:none;margin-left:12px}
+
+    /* Header */
+    .site-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background: #f8f9fa;
+      border-bottom: 2px solid #ddd;
+    }
+
+    .site-header h1 {
+      margin: 0;
+      font-size: 1.5em;
+    }
+
+    .submit-btn {
+      background: #0077cc;
+      color: white;
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-weight: bold;
+      transition: background 0.2s ease;
+    }
+
+    .submit-btn:hover {
+      background: #005fa3;
+    }
 
     /* Content */
-    .content{flex:1;padding:28px}
-    .table-wrap{background:#fff;border-radius:8px;padding:14px;margin-bottom:30px}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:10px;border-bottom:1px solid #eee}
-    .tag{padding:2px 6px;background:#eef;color:#224;border-radius:4px;font-size:12px}
-    a.link{color:var(--accent);text-decoration:none}
+    .content {
+      max-width: 1000px;
+      margin: 20px auto;
+      padding: 0 20px;
+    }
 
-    /* Form */
-    .form-section{background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
-    .form-section h2{margin-top:0}
+    h2 {
+      margin-top: 0;
+    }
+
+    select {
+      margin-bottom: 15px;
+      padding: 5px;
+      font-size: 1em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    table th, table td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+
+    table th {
+      background: #0077cc;
+      color: white;
+    }
+
+    table tr:nth-child(even) {
+      background: #f9f9f9;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <h2>Provinces & Regions</h2>
-      <button id="show-all">Show All</button>
-      <ul class="province-list" id="provinceList"></ul>
-    </aside>
+  <!-- Header -->
+  <header class="site-header">
+    <h1>Volleyball Tournaments in Canada</h1>
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLScM7Pyn9Udc0EZcG2yJ-YpqCVqny-dqTNXOGwYQSyEyGS1Nwg/viewform?usp=sharing&ouid=111050342805730174946
+" target="_blank" class="submit-btn">
+      Submit Your Event
+    </a>
+  </header>
 
-    <!-- Main -->
-    <main class="content">
-      <h1>Upcoming Volleyball Events</h1>
-      <div class="table-wrap">
-        <table id="eventsTable">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Event</th>
-              <th>City / Region</th>
-              <th>Province</th>
-              <th>Level</th>
-              <th>Registration</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- filled automatically -->
-          </tbody>
-        </table>
-      </div>
+  <!-- Content -->
+  <div class="content">
+    <h2>Upcoming Tournaments</h2>
+    <label for="regionFilter">Filter by Province/Region:</label>
+    <select id="regionFilter">
+      <option value="all">All Regions</option>
+      <option value="Alberta">Alberta</option>
+      <option value="British Columbia">British Columbia</option>
+      <option value="Manitoba">Manitoba</option>
+      <option value="New Brunswick">New Brunswick</option>
+      <option value="Newfoundland and Labrador">Newfoundland and Labrador</option>
+      <option value="Nova Scotia">Nova Scotia</option>
+      <option value="Ontario">Ontario</option>
+      <option value="Prince Edward Island">Prince Edward Island</option>
+      <option value="Quebec">Quebec</option>
+      <option value="Saskatchewan">Saskatchewan</option>
+      <option value="Territories">Territories</option>
+    </select>
 
-      <!-- Submission Form -->
-      <section class="form-section">
-        <h2>Submit a Tournament</h2>
-        <iframe 
-          src="https://docs.google.com/forms/d/e/1FAIpQLScM7Pyn9Udc0EZcG2yJ-YpqCVqny-dqTNXOGwYQSyEyGS1Nwg/viewform?usp=sharing&ouid=111050342805730174946"
-          width="100%" height="600" frameborder="0" marginheight="0" marginwidth="0">
-          Loading…
-        </iframe>
-      </section>
-    </main>
+    <table id="eventsTable">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Name</th>
+          <th>City</th>
+          <th>Province</th>
+          <th>Region</th>
+          <th>Level</th>
+          <th>Registration</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Events will load here -->
+      </tbody>
+    </table>
   </div>
 
   <script>
-    // Define provinces + regions
-    const provinces = {
-      "Ontario": ["Toronto","Ottawa","Hamilton","Waterloo Region","London"],
-      "Quebec": ["Montreal","Quebec City","Sherbrooke","Gatineau"],
-      "British Columbia": ["Vancouver","Victoria","Kelowna"],
-      "Alberta": ["Calgary","Edmonton","Red Deer"],
-      "Manitoba": ["Winnipeg"],
-      "Saskatchewan": ["Saskatoon","Regina"],
-      "Nova Scotia": ["Halifax","Sydney"],
-      "New Brunswick": ["Moncton","Fredericton","Saint John"],
-      "Prince Edward Island": ["Charlottetown"],
-      "Newfoundland & Labrador": ["St. John's"],
-      "Yukon": ["Whitehorse"],
-      "Northwest Territories": ["Yellowknife"],
-      "Nunavut": ["Iqaluit"]
-    };
-
-    const provinceListEl=document.getElementById('provinceList');
-    const tableBody=document.querySelector('#eventsTable tbody');
-    let eventsData=[];
-
-    // Build sidebar
-    Object.keys(provinces).forEach(prov=>{
-      const li=document.createElement('li');li.className='province';
-      const btn=document.createElement('button');btn.textContent=prov;btn.onclick=()=>applyFilter(prov,null);
-      const regions=document.createElement('div');regions.className='regions';
-      provinces[prov].forEach(region=>{
-        const rbtn=document.createElement('button');rbtn.textContent=region;rbtn.className='region-button';
-        rbtn.onclick=()=>applyFilter(prov,region);regions.appendChild(rbtn);
-      });
-      btn.addEventListener('click',()=>{regions.style.display=regions.style.display==='block'?'none':'block';});
-      li.appendChild(btn);li.appendChild(regions);provinceListEl.appendChild(li);
-    });
-
-    document.getElementById('show-all').onclick=()=>applyFilter(null,null);
-
-    // Fetch from Google Sheets (CSV)
+    // Replace with your published Google Sheet CSV link
     const sheetUrl = "https://docs.google.com/spreadsheets/d/1UNuPz22hDFkdUjWJQWkeornQHfaWtsXhYzX5g8g_Mvg/edit?usp=sharing";
 
     function csvToJSON(csv) {
@@ -119,56 +139,55 @@
       return lines.slice(1).map(line => {
         const values = line.split(",");
         let obj = {};
-        headers.forEach((h,i)=>obj[h.trim()]=values[i]?.trim());
+        headers.forEach((h, i) => obj[h.trim()] = values[i]?.trim());
         return obj;
       });
     }
 
+    let eventsData = [];
+
     fetch(sheetUrl)
-      .then(res=>res.text())
-      .then(csv=>{
+      .then(res => res.text())
+      .then(csv => {
         const data = csvToJSON(csv);
-        eventsData = data.map(ev=>({
-          date: ev["Date"] || "",
-          name: ev["Tournament Name"] || "",
-          city: ev["City"] || "",
-          province: ev["Province"] || "",
-          region: ev["Region"] || "",
-          level: ev["Level"] || "",
-          registration: ev["Registration Link"] || ""
+        eventsData = data.map(ev => ({
+          date: ev["Date"],
+          name: ev["Tournament Name"],
+          city: ev["City"],
+          province: ev["Province"],
+          region: ev["Region"],
+          level: ev["Level"],
+          registration: ev["Registration Link"]
         }));
         renderTable(eventsData);
       });
 
-    function renderTable(events){
-      tableBody.innerHTML='';
-      if(events.length===0){
-        tableBody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px">No events yet.</td></tr>';
-        return;
-      }
-      events.forEach(ev=>{
-        const tr=document.createElement('tr');
-        tr.dataset.province=ev.province;tr.dataset.region=ev.region;
-        tr.innerHTML=`
-          <td>${ev.date}</td>
-          <td>${ev.name}</td>
-          <td>${ev.city} (${ev.region})</td>
-          <td>${ev.province}</td>
-          <td><span class="tag">${ev.level}</span></td>
-          <td>${ev.registration?`<a href="${ev.registration}" class="link">Register</a>`:"—"}</td>`;
-        tableBody.appendChild(tr);
+    function renderTable(data) {
+      const tbody = document.querySelector("#eventsTable tbody");
+      tbody.innerHTML = "";
+      data.forEach(ev => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${ev.date || ""}</td>
+          <td>${ev.name || ""}</td>
+          <td>${ev.city || ""}</td>
+          <td>${ev.province || ""}</td>
+          <td>${ev.region || ""}</td>
+          <td>${ev.level || ""}</td>
+          <td>${ev.registration ? `<a href="${ev.registration}" target="_blank">Register</a>` : ""}</td>
+        `;
+        tbody.appendChild(tr);
       });
     }
 
-    function applyFilter(province,region){
-      if(!province&&!region){renderTable(eventsData);return;}
-      const filtered=eventsData.filter(ev=>{
-        if(province&&region){return ev.province===province&&ev.region===region;}
-        if(province&&!region){return ev.province===province;}
-        return true;
-      });
-      renderTable(filtered);
-    }
+    document.getElementById("regionFilter").addEventListener("change", e => {
+      const region = e.target.value;
+      if (region === "all") {
+        renderTable(eventsData);
+      } else {
+        renderTable(eventsData.filter(ev => ev.province === region || ev.region === region));
+      }
+    });
   </script>
 </body>
 </html>
