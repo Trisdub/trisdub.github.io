@@ -182,7 +182,7 @@
         })
         .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-        // Show table or empty message immediately on first load
+        // Always render the table or empty message immediately
         renderTable(eventsData);
       });
 
@@ -193,12 +193,12 @@
 
       tbody.innerHTML = "";
 
-      if (data.length === 0) {
-        table.style.display = "none";   
-        emptyMessage.style.display = "block"; 
+      if (!data || data.length === 0) {
+        table.style.display = "none"; // hide table
+        emptyMessage.style.display = "block"; // show message
       } else {
-        table.style.display = "table";  
-        emptyMessage.style.display = "none"; 
+        table.style.display = "table"; // show table
+        emptyMessage.style.display = "none"; // hide message
         data.forEach(ev => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
