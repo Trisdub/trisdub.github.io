@@ -8,6 +8,7 @@
 <body>
   <header class="site-header">
     <h1>Submit a Volleyball Tournament</h1>
+    <button id="loginBtn" class="submit-btn">Sign in with Google</button>
   </header>
 
   <div class="content">
@@ -26,25 +27,48 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
     import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
-    import { firebaseConfig } from './config.js'; // if you have your config in config.js
+    import { firebaseConfig } from './config.js';
 
+    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+
+    const loginBtn = document.getElementById("loginBtn");
+    loginBtn.addEventListener("click", async () => {
+      try {
+        await signInWithPopup(auth, provider);
+        alert("Signed in successfully! You can now submit an event.");
+      } catch(err) {
+        console.error(err);
+        alert("Sign-in failed.");
+      }
+    });
 
     const form = document.getElementById("eventForm");
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
+
+      // Ensure user is logged in
+      if (!auth.currentUser) {
+        alert("Please sign in first!");
+        return;
+      }
+
       const data = {
         name: form.name.value,
         province: form.province.value,
         city: form.city.value,
         region: form.region.value,
-        date: form.date.value,
+        date: form.date.value, // YYYY-MM-DD
         level: form.level.value,
         registration: form.registration.value,
         address: form.address.value
       };
+
       try {
         await addDoc(collection(db, "tournaments"), data);
         alert("Event submitted successfully!");
