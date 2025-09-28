@@ -2,30 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Submit Volleyball Event</title>
+  <title>Submit a Volleyball Tournament</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    /* Optional: style to make form inputs and button look nice */
-    input, button {
-      padding: 8px;
-      margin: 6px 0;
-      width: 300px;
-      font-size: 16px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-
-    button {
-      background-color: #28a745;
-      color: white;
-      cursor: pointer;
-      border: none;
-    }
-
-    button:hover {
-      background-color: #218838;
-    }
-  </style>
 </head>
 <body>
   <header class="site-header">
@@ -33,23 +11,24 @@
   </header>
 
   <div class="content">
-    <form id="eventForm">
-      <!-- Public event info -->
-      <input type="text" name="name" placeholder="Event Name" required><br>
-      <input type="text" name="province" placeholder="Province" required><br>
-      <input type="text" name="city" placeholder="City" required><br>
-      <input type="text" name="region" placeholder="Region"><br>
-      <input type="date" name="date" required><br>
-      <input type="text" name="level" placeholder="Level" required><br>
-      <input type="text" name="registration" placeholder="Registration Link/Email"><br>
-      <input type="text" name="address" placeholder="Address"><br>
-
-      <!-- Private submitter info -->
-      <input type="text" name="submitterName" placeholder="Your Name" required><br>
-      <input type="tel" name="phone" placeholder="Phone Number" required><br>
-
-      <button type="submit">Submit Event</button>
+    <form id="tournamentForm">
+      <label>Event Name: <input type="text" id="name" required></label><br>
+      <label>Province: <input type="text" id="province" required></label><br>
+      <label>City: <input type="text" id="city" required></label><br>
+      <label>Region: <input type="text" id="region"></label><br>
+      <label>Date (YYYY-MM-DD): <input type="date" id="date" required></label><br>
+      <label>Level: <input type="text" id="level" required></label><br>
+      <label>Registration (link or email): <input type="text" id="registration"></label><br>
+      <label>Address: <input type="text" id="address"></label><br>
+      <label>Your Name (private): <input type="text" id="submitterName" required></label><br>
+      <label>Your Phone Number (private): <input type="tel" id="submitterPhone" required></label><br>
+      <button type="submit">Submit Tournament</button>
     </form>
+
+    <!-- ✅ New return button -->
+    <div style="margin-top: 20px;">
+      <a href="index.html" class="submit-btn">⬅ Return to Home Page</a>
+    </div>
   </div>
 
   <script type="module">
@@ -57,42 +36,44 @@
     import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
     import { firebaseConfig } from './config.js';
 
-    // Initialize Firebase
+    // Init Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const form = document.getElementById("eventForm");
+    const form = document.getElementById("tournamentForm");
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const publicData = {
-        name: form.name.value,
-        province: form.province.value,
-        city: form.city.value,
-        region: form.region.value,
-        date: form.date.value,  // YYYY-MM-DD
-        level: form.level.value,
-        registration: form.registration.value,
-        address: form.address.value
+      const event = {
+        name: document.getElementById("name").value,
+        province: document.getElementById("province").value,
+        city: document.getElementById("city").value,
+        region: document.getElementById("region").value,
+        date: document.getElementById("date").value,
+        level: document.getElementById("level").value,
+        registration: document.getElementById("registration").value,
+        address: document.getElementById("address").value,
+        submitterName: document.getElementById("submitterName").value,
+        submitterPhone: document.getElementById("submitterPhone").value
       };
 
       try {
-        // Save public info
-        const publicRef = await addDoc(collection(db, "tournaments_public"), publicData);
+        // Save public data
+        await addDoc(collection(db, "tournaments_public"), event);
 
-        // Save private info
+        // Save private data separately
         await addDoc(collection(db, "tournaments_private"), {
-          eventId: publicRef.id,           // link to public event
-          submitterName: form.submitterName.value,
-          phone: form.phone.value
+          name: event.name,
+          submitterName: event.submitterName,
+          submitterPhone: event.submitterPhone
         });
 
-        alert("Event submitted successfully!");
+        alert("Tournament submitted successfully!");
         form.reset();
-      } catch(err) {
-        console.error(err);
-        alert("Error submitting event.");
+      } catch (error) {
+        console.error("Error adding document: ", error);
+        alert("Error submitting tournament.");
       }
     });
   </script>
