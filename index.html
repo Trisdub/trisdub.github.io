@@ -55,13 +55,14 @@
 
   <script src="config.js"></script>
   <script>
+    // Simple CSV parser
     function csvToJSON(csv) {
       const lines = csv.split("\n").filter(l => l.trim() !== "");
       const headers = lines[0].split(",");
       return lines.slice(1).map(line => {
         const values = line.split(",");
         let obj = {};
-        headers.forEach((h,i) => obj[h.trim()] = values[i]?.trim());
+        headers.forEach((h, i) => obj[h.trim()] = values[i]?.trim());
         return obj;
       });
     }
@@ -100,12 +101,16 @@
           .sort((a,b) => new Date(a.date) - new Date(b.date));
 
           renderTable(eventsData);
+        })
+        .catch(err => {
+          console.error("Error fetching events:", err);
+          document.getElementById("emptyMessage").innerText = "Unable to load tournaments.";
+          document.getElementById("emptyMessage").style.display = "block";
         });
     }
 
     function renderTable(data) {
-      const table = document.getElementById("eventsTable");
-      const tbody = table.querySelector("tbody");
+      const tbody = document.getElementById("eventsTable").querySelector("tbody");
       const emptyMessage = document.getElementById("emptyMessage");
 
       tbody.innerHTML = "";
@@ -143,6 +148,7 @@
 
     refreshBtn.addEventListener("click", fetchEvents);
 
+    // Fetch events on page load
     fetchEvents();
   </script>
 </body>
