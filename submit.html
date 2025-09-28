@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Submit Volleyball Event</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <h1>Submit a Volleyball Tournament</h1>
+  </header>
+
+  <div class="content">
+    <form id="eventForm">
+      <input type="text" name="name" placeholder="Event Name" required><br>
+      <input type="text" name="province" placeholder="Province" required><br>
+      <input type="text" name="city" placeholder="City" required><br>
+      <input type="text" name="region" placeholder="Region"><br>
+      <input type="date" name="date" required><br>
+      <input type="text" name="level" placeholder="Level" required><br>
+      <input type="text" name="registration" placeholder="Registration Link/Email"><br>
+      <input type="text" name="address" placeholder="Address"><br>
+      <button type="submit">Submit Event</button>
+    </form>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+    import { firebaseConfig } from './config.js';
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const form = document.getElementById("eventForm");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = {
+        name: form.name.value,
+        province: form.province.value,
+        city: form.city.value,
+        region: form.region.value,
+        date: form.date.value, // YYYY-MM-DD
+        level: form.level.value,
+        registration: form.registration.value,
+        address: form.address.value
+      };
+      try {
+        await addDoc(collection(db, "tournaments"), data);
+        alert("Event submitted successfully!");
+        form.reset();
+      } catch (err) {
+        console.error(err);
+        alert("Error submitting event.");
+      }
+    });
+  </script>
+</body>
+</html>
