@@ -37,7 +37,7 @@
     }
 
     .form-container {
-      max-width: 600px;
+      max-width: 650px;
       margin: 40px auto;
       background: #fff;
       padding: 25px;
@@ -95,11 +95,23 @@
       <label for="date">Date:</label>
       <input type="date" id="date" name="date" required>
 
-      <label for="location">Location:</label>
+      <label for="province">Province:</label>
+      <input type="text" id="province" name="province" required>
+
+      <label for="region">Region:</label>
+      <input type="text" id="region" name="region" required>
+
+      <label for="city">City:</label>
+      <input type="text" id="city" name="city" required>
+
+      <label for="location">Venue / Exact Location:</label>
       <input type="text" id="location" name="location" required>
 
       <label for="details">Details:</label>
       <textarea id="details" name="details" rows="4" required></textarea>
+
+      <label for="registration">Registration Info (link or instructions):</label>
+      <textarea id="registration" name="registration" rows="3" required></textarea>
 
       <label for="contactName">Your Name:</label>
       <input type="text" id="contactName" name="contactName" required>
@@ -134,23 +146,22 @@
     document.getElementById('tournamentForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const name = document.getElementById('name').value;
-      const date = document.getElementById('date').value;
-      const location = document.getElementById('location').value;
-      const details = document.getElementById('details').value;
-      const contactName = document.getElementById('contactName').value;
-      const contactPhone = document.getElementById('contactPhone').value;
+      const tournamentData = {
+        name: document.getElementById('name').value,
+        date: document.getElementById('date').value,
+        province: document.getElementById('province').value,
+        region: document.getElementById('region').value,
+        city: document.getElementById('city').value,
+        location: document.getElementById('location').value,
+        details: document.getElementById('details').value,
+        registration: document.getElementById('registration').value,
+        contactName: document.getElementById('contactName').value,
+        contactPhone: document.getElementById('contactPhone').value,
+        createdAt: new Date()
+      };
 
       try {
-        await db.collection('tournaments').add({
-          name,
-          date,
-          location,
-          details,
-          contactName,
-          contactPhone,
-          createdAt: new Date()
-        });
+        await db.collection('tournaments').add(tournamentData);
         alert('Tournament submitted successfully!');
         document.getElementById('tournamentForm').reset();
       } catch (error) {
