@@ -130,7 +130,7 @@
       <option value="Territories">Territories</option>
     </select>
 
-    <table id="eventsTable" style="display: none;">
+    <table id="eventsTable">
       <thead>
         <tr>
           <th>Date</th>
@@ -140,6 +140,7 @@
           <th>Region</th>
           <th>Level</th>
           <th>Registration</th>
+          <th>Address</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -181,13 +182,14 @@
           today.setHours(0,0,0,0);
 
           eventsData = data.map(ev => ({
-            date: ev["Date (YYYY/MM/DD)"],    // updated column header
-            name: ev["Event name"],            // updated
+            date: ev["Date (YYYY/MM/DD)"],
+            name: ev["Event name"],
             city: ev["City"],
             province: ev["Province"],
             region: ev["Region"],
             level: ev["Level"],
-            registration: ev["Registration (Link or Email or both)"] // updated
+            registration: ev["Registration (Link or Email or both)"],
+            address: ev["Address"]  // new Address column
           }))
           .filter(ev => {
             if (!ev.date) return false;
@@ -208,25 +210,25 @@
       tbody.innerHTML = "";
 
       if (!data || data.length === 0) {
-        table.style.display = "none";
         emptyMessage.style.display = "block";
       } else {
-        table.style.display = "table";
         emptyMessage.style.display = "none";
-        data.forEach(ev => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${ev.date || ""}</td>
-            <td>${ev.name || ""}</td>
-            <td>${ev.city || ""}</td>
-            <td>${ev.province || ""}</td>
-            <td>${ev.region || ""}</td>
-            <td>${ev.level || ""}</td>
-            <td>${ev.registration ? `<a href="${ev.registration}" target="_blank">Register</a>` : ""}</td>
-          `;
-          tbody.appendChild(tr);
-        });
       }
+
+      data.forEach(ev => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${ev.date || ""}</td>
+          <td>${ev.name || ""}</td>
+          <td>${ev.city || ""}</td>
+          <td>${ev.province || ""}</td>
+          <td>${ev.region || ""}</td>
+          <td>${ev.level || ""}</td>
+          <td>${ev.registration ? `<a href="${ev.registration}" target="_blank">Register</a>` : ""}</td>
+          <td>${ev.address || ""}</td>
+        `;
+        tbody.appendChild(tr);
+      });
     }
 
     regionFilter.addEventListener("change", e => {
@@ -244,3 +246,4 @@
     fetchEvents();
   </script>
 </body>
+</html>
