@@ -2,76 +2,160 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Submit a Volleyball Tournament</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f4;
+    }
+
+    header {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 15px 20px;
+      background: #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .home-btn {
+      background-color: orange;
+      color: white;
+      padding: 10px 18px;
+      text-decoration: none;
+      font-weight: bold;
+      border-radius: 5px;
+      transition: background 0.3s;
+    }
+
+    .home-btn:hover {
+      background-color: darkorange;
+    }
+
+    .form-container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 15px;
+    }
+
+    input, textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+
+    button {
+      background: orange;
+      color: white;
+      font-weight: bold;
+      border: none;
+      margin-top: 20px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: darkorange;
+    }
+  </style>
 </head>
 <body>
-  <header class="site-header">
-    <h1>Submit a Volleyball Tournament</h1>
-    <nav>
-      <a href="index.html" class="submit-btn">⬅ Return to Home Page</a>
-    </nav>
+
+  <header>
+    <a href="index.html" class="home-btn">Return to Home Page</a>
   </header>
 
-  <div class="content">
+  <div class="form-container">
+    <h1>Submit a Volleyball Tournament</h1>
     <form id="tournamentForm">
-      <label>Event Name: <input type="text" id="name" required></label><br>
-      <label>Province: <input type="text" id="province" required></label><br>
-      <label>City: <input type="text" id="city" required></label><br>
-      <label>Region: <input type="text" id="region"></label><br>
-      <label>Date (YYYY-MM-DD): <input type="date" id="date" required></label><br>
-      <label>Level: <input type="text" id="level" required></label><br>
-      <label>Registration (link or email): <input type="text" id="registration"></label><br>
-      <label>Address: <input type="text" id="address"></label><br>
-      <label>Your Name (private): <input type="text" id="submitterName" required></label><br>
-      <label>Your Phone Number (private): <input type="tel" id="submitterPhone" required></label><br>
-      <button type="submit">Submit Tournament</button>
+      <label for="name">Tournament Name:</label>
+      <input type="text" id="name" name="name" required>
+
+      <label for="date">Date:</label>
+      <input type="date" id="date" name="date" required>
+
+      <label for="location">Location:</label>
+      <input type="text" id="location" name="location" required>
+
+      <label for="details">Details:</label>
+      <textarea id="details" name="details" rows="4" required></textarea>
+
+      <label for="contactName">Your Name:</label>
+      <input type="text" id="contactName" name="contactName" required>
+
+      <label for="contactPhone">Your Cellphone Number:</label>
+      <input type="tel" id="contactPhone" name="contactPhone" required>
+
+      <button type="submit">Submit Your Event</button>
     </form>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
-    import { firebaseConfig } from './config.js';
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
 
-    // Init Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  <script>
+    // Your Firebase config
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
 
-    const form = document.getElementById("tournamentForm");
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    form.addEventListener("submit", async (e) => {
+    // Form submission
+    document.getElementById('tournamentForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const event = {
-        name: document.getElementById("name").value,
-        province: document.getElementById("province").value,
-        city: document.getElementById("city").value,
-        region: document.getElementById("region").value,
-        date: document.getElementById("date").value,
-        level: document.getElementById("level").value,
-        registration: document.getElementById("registration").value,
-        address: document.getElementById("address").value,
-        submitterName: document.getElementById("submitterName").value,
-        submitterPhone: document.getElementById("submitterPhone").value
-      };
+      const name = document.getElementById('name').value;
+      const date = document.getElementById('date').value;
+      const location = document.getElementById('location').value;
+      const details = document.getElementById('details').value;
+      const contactName = document.getElementById('contactName').value;
+      const contactPhone = document.getElementById('contactPhone').value;
 
       try {
-        // Save public data
-        await addDoc(collection(db, "tournaments_public"), event);
-
-        // Save private data separately
-        await addDoc(collection(db, "tournaments_private"), {
-          name: event.name,
-          submitterName: event.submitterName,
-          submitterPhone: event.submitterPhone
+        await db.collection('tournaments').add({
+          name,
+          date,
+          location,
+          details,
+          contactName,
+          contactPhone,
+          createdAt: new Date()
         });
-
-        alert("Tournament submitted successfully!");
-        form.reset();
+        alert('Tournament submitted successfully!');
+        document.getElementById('tournamentForm').reset();
       } catch (error) {
         console.error("Error adding document: ", error);
-        alert("Error submitting tournament.");
+        alert('There was an error submitting your event.');
       }
     });
   </script>
