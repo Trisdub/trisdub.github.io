@@ -15,49 +15,27 @@ body {
   border-bottom: 2px solid #ddd;
 }
 
-.site-header h1 { 
-  margin: 0; 
-  font-size: 1.5em; 
-}
+.site-header h1 { margin: 0; font-size: 1.5em; }
 
-.submit-btn {
-  background: #0077cc;
-  color: white;
+.submit-btn, .refresh-btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: bold;
   text-decoration: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-weight: bold;
-  margin-right: 10px;
-}
-
-.submit-btn:hover {
-  background: #005fa3;
-}
-
-.refresh-btn {
-  background: #28a745;
   color: white;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-weight: bold;
+  margin-left: 10px;
   cursor: pointer;
 }
 
-.refresh-btn:hover {
-  background: #1e7e34;
-}
+.submit-btn { background: #0077cc; }
+.submit-btn:hover { background: #005fa3; }
 
-.content { 
-  max-width: 1000px; 
-  margin: 20px auto; 
-  padding: 0 20px; 
-}
+.refresh-btn { background: #28a745; }
+.refresh-btn:hover { background: #1e7e34; }
 
-select { 
-  margin-bottom: 15px; 
-  padding: 5px; 
-  font-size: 1em; 
-}
+.content { max-width: 1000px; margin: 20px auto; padding: 0 20px; }
+
+select { margin-bottom: 15px; padding: 5px; font-size: 1em; }
 
 table {
   width: 100%;
@@ -73,14 +51,9 @@ table th, table td {
   text-align: left;
 }
 
-table th { 
-  background: #0077cc; 
-  color: white; 
-}
+table th { background: #0077cc; color: white; }
 
-table tr:nth-child(even) { 
-  background: #f9f9f9; 
-}
+table tr:nth-child(even) { background: #f9f9f9; }
 
 .empty-message {
   text-align: center;
