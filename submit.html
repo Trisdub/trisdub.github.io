@@ -48,6 +48,13 @@
       const organizerName = document.getElementById("organizerName").value;
       const organizerPhone = document.getElementById("organizerPhone").value;
 
+      // Validate phone number (basic format: 10 digits, optional spaces/dashes/parentheses)
+      const phoneRegex = /^\s*(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4})(?: *x(\d+))?\s*$/;
+      if (!phoneRegex.test(organizerPhone)) {
+        alert("Invalid phone number");
+        return; // stop submission
+      }
+
       // Level radio button (single value)
       const levelSelected = document.querySelector("input[name='level']:checked")?.value;
 
