@@ -3,77 +3,112 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Submit a Tournament</title>
-</head>
-<body>
-  <h1>Submit a Tournament</h1>
-  <form id="tournamentForm">
-    <label>
-      Tournament Name:
-      <input type="text" id="name" required />
-    </label><br><br>
-
-    <label>
-      Location:
-      <input type="text" id="location" required />
-    </label><br><br>
-
-    <label>
-      Date:
-      <input type="date" id="date" required />
-    </label><br><br>
-
-    <button type="submit">Submit</button>
-  </form>
-
-  <p id="status"></p>
-  <p><a href="index.html">Back to Home</a></p>
-
-  <!-- Firebase SDKs -->
+  <title>Submit a Volleyball Tournament</title>
+  <link rel="stylesheet" href="style.css" />
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    // Your Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCfVProG4-iZ8z4r869oiBHB7OX4Fl3lMU",
       authDomain: "volleyball-tourneys.firebaseapp.com",
       projectId: "volleyball-tourneys",
-      storageBucket: "volleyball-tourneys.appspot.com",
+      storageBucket: "volleyball-tourneys.firebasestorage.app",
       messagingSenderId: "652764056781",
       appId: "1:652764056781:web:70f90b5a6f5357aff16d84",
       measurementId: "G-HJF63771D7"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Handle form submission
-    const form = document.getElementById("tournamentForm");
-    const status = document.getElementById("status");
-
-    form.addEventListener("submit", async (e) => {
+    async function submitTournament(e) {
       e.preventDefault();
-
       const name = document.getElementById("name").value;
-      const location = document.getElementById("location").value;
+      const province = document.getElementById("province").value;
+      const region = document.getElementById("region").value;
+      const city = document.getElementById("city").value;
       const date = document.getElementById("date").value;
+      const address = document.getElementById("address").value;
+      const registration = document.getElementById("registration").value;
+
+      // Level checkboxes
+      const levels = [];
+      document.querySelectorAll("input[name='level']:checked").forEach(cb => levels.push(cb.value));
 
       try {
         await addDoc(collection(db, "tournaments"), {
           name,
-          location,
+          province,
+          region,
+          city,
           date,
-          createdAt: serverTimestamp()
+          address,
+          registration,
+          level: levels.join(", ")
         });
-        status.textContent = "Tournament submitted successfully!";
-        form.reset();
-      } catch (error) {
-        console.error("Error adding tournament:", error);
-        status.textContent = "Error submitting tournament.";
+        alert("Tournament submitted successfully!");
+        document.getElementById("tournament-form").reset();
+      } catch (err) {
+        alert("Error: " + err.message);
       }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("tournament-form").addEventListener("submit", submitTournament);
     });
   </script>
+</head>
+<body>
+  <header>
+    <h1>Submit a Volleyball Tournament</h1>
+    <a href="index.html" class="button">Return to Home Page</a>
+  </header>
+
+  <main class="form-container">
+    <form id="tournament-form">
+      <label for="name">Event Name:</label>
+      <input type="text" id="name" required />
+
+      <label for="province">Province:</label>
+      <select id="province" required>
+        <option value="">Select a province</option>
+        <option value="Alberta">Alberta</option>
+        <option value="British Columbia">British Columbia</option>
+        <option value="Manitoba">Manitoba</option>
+        <option value="New Brunswick">New Brunswick</option>
+        <option value="Newfoundland and Labrador">Newfoundland and Labrador</option>
+        <option value="Nova Scotia">Nova Scotia</option>
+        <option value="Ontario">Ontario</option>
+        <option value="Prince Edward Island">Prince Edward Island</option>
+        <option value="Quebec">Quebec</option>
+        <option value="Saskatchewan">Saskatchewan</option>
+      </select>
+
+      <label for="region">Region:</label>
+      <input type="text" id="region" />
+
+      <label for="city">City:</label>
+      <input type="text" id="city" required />
+
+      <label for="date">Date:</label>
+      <input type="date" id="date" required />
+
+      <label for="address">Address:</label>
+      <input type="text" id="address" required />
+
+      <label>Level:</label>
+      <div>
+        <label><input type="checkbox" name="level" value="Open Gym" /> Open Gym</label>
+        <label><input type="checkbox" name="level" value="Competitive" /> Competitive</label>
+        <label><input type="checkbox" name="level" value="Recreative" /> Recreative</label>
+      </div>
+
+      <label for="registration">Registration (link or email):</label>
+      <input type="text" id="registration" />
+
+      <button type="submit" class="button">Submit Event</button>
+    </form>
+  </main>
 </body>
 </html>
