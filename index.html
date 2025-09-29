@@ -1,206 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Volleyball Tournaments</title>
-  <link rel="stylesheet" href="style.css">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      background: #f4f4f4;
-    }
-
-    /* Sidebar */
-    .sidebar {
-      width: 220px;
-      background: #fff;
-      padding: 20px;
-      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-      height: 100vh;
-      box-sizing: border-box;
-    }
-
-    .sidebar h2 {
-      font-size: 18px;
-      margin-top: 0;
-    }
-
-    .sidebar select {
-      width: 100%;
-      padding: 8px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      margin-bottom: 15px;
-    }
-
-    /* Main content */
-    .main {
-      flex: 1;
-      padding: 20px;
-    }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 20px;
-    }
-
-    .home-btn {
-      background-color: orange;
-      color: white;
-      padding: 10px 18px;
-      text-decoration: none;
-      font-weight: bold;
-      border-radius: 5px;
-      transition: background 0.3s;
-    }
-
-    .home-btn:hover {
-      background-color: darkorange;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #fff;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-
-    th, td {
-      padding: 12px;
-      border: 1px solid #ddd;
-      text-align: left;
-    }
-
-    th {
-      background-color: orange;
-      color: white;
-    }
-
-    tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
-
-    .no-events {
-      text-align: center;
-      margin: 20px;
-      font-weight: bold;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Volleyball Tourneys</title>
 </head>
 <body>
+  <h1>Welcome to Volleyball Tourneys</h1>
+  <p><a href="submit.html">Submit a Tournament</a></p>
 
-  <div class="sidebar">
-    <h2>Filter by Province</h2>
-    <select id="provinceFilter">
-      <option value="">All Provinces</option>
-      <option value="Alberta">Alberta</option>
-      <option value="British Columbia">British Columbia</option>
-      <option value="Manitoba">Manitoba</option>
-      <option value="New Brunswick">New Brunswick</option>
-      <option value="Newfoundland and Labrador">Newfoundland and Labrador</option>
-      <option value="Nova Scotia">Nova Scotia</option>
-      <option value="Ontario">Ontario</option>
-      <option value="Prince Edward Island">Prince Edward Island</option>
-      <option value="Quebec">Quebec</option>
-      <option value="Saskatchewan">Saskatchewan</option>
-    </select>
-  </div>
+  <h2>Upcoming Tournaments</h2>
+  <ul id="tournamentList">
+    <li>Loading tournaments...</li>
+  </ul>
 
-  <div class="main">
-    <header>
-      <h1>Volleyball Tournaments</h1>
-      <a href="submit.html" class="home-btn">Submit Your Event</a>
-    </header>
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getFirestore, collection, getDocs, orderBy, query } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-    <table id="tournamentsTable">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Date</th>
-          <th>Province</th>
-          <th>Region</th>
-          <th>City</th>
-          <th>Address</th>
-          <th>Level</th>
-          <th>Registration</th>
-        </tr>
-      </thead>
-      <tbody id="tournamentsBody"></tbody>
-    </table>
-    <div id="noEvents" class="no-events" style="display:none;">No upcoming tournaments</div>
-  </div>
-
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
-
-  <script>
+    // Your Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCfVProG4-iZ8z4r869oiBHB7OX4Fl3lMU",
       authDomain: "volleyball-tourneys.firebaseapp.com",
       projectId: "volleyball-tourneys",
-      storageBucket: "volleyball-tourneys.firebasestorage.app",
+      storageBucket: "volleyball-tourneys.appspot.com",
       messagingSenderId: "652764056781",
       appId: "1:652764056781:web:70f90b5a6f5357aff16d84",
       measurementId: "G-HJF63771D7"
     };
 
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-    const tableBody = document.getElementById('tournamentsBody');
-    const noEventsDiv = document.getElementById('noEvents');
-    const provinceFilter = document.getElementById('provinceFilter');
-
+    // Load tournaments
+    const listEl = document.getElementById("tournamentList");
     async function loadTournaments() {
-      tableBody.innerHTML = '';
-      const today = new Date().toISOString().split('T')[0];
-
+      listEl.innerHTML = "<li>Loading tournaments...</li>";
       try {
-        const snapshot = await db.collection('tournaments')
-          .orderBy('date')
-          .get();
+        const q = query(collection(db, "tournaments"), orderBy("date", "asc"));
+        const snapshot = await getDocs(q);
 
-        let hasUpcoming = false;
-        const selectedProvince = provinceFilter.value;
+        if (snapshot.empty) {
+          listEl.innerHTML = "<li>No tournaments found.</li>";
+          return;
+        }
 
-        snapshot.forEach(doc => {
+        listEl.innerHTML = "";
+        snapshot.forEach((doc) => {
           const data = doc.data();
-
-          if(data.date >= today &&
-             (selectedProvince === '' || data.province === selectedProvince)) {
-
-            hasUpcoming = true;
-            const row = document.createElement('tr');
-            row.innerHTML = `
-              <td>${data.name}</td>
-              <td>${data.date}</td>
-              <td>${data.province}</td>
-              <td>${data.region}</td>
-              <td>${data.city}</td>
-              <td>${data.address}</td>
-              <td>${data.level}</td>
-              <td>${data.registration}</td>
-            `;
-            tableBody.appendChild(row);
-          }
+          const li = document.createElement("li");
+          li.textContent = `${data.name} - ${data.location} - ${data.date}`;
+          listEl.appendChild(li);
         });
-
-        noEventsDiv.style.display = hasUpcoming ? 'none' : 'block';
-
       } catch (error) {
-        console.error('Error loading tournaments:', error);
-        noEventsDiv.textContent = 'Unable to load tournaments';
-        noEventsDiv.style.display = 'block';
+        console.error("Error loading tournaments:", error);
+        listEl.innerHTML = "<li>Error loading tournaments.</li>";
       }
     }
 
-    provinceFilter.addEventListener('change', loadTournaments);
     loadTournaments();
   </script>
 </body>
