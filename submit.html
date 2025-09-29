@@ -55,7 +55,7 @@
         return;
       }
 
-      // Level radio button (single value)
+      // Level radio button
       const levelSelected = document.querySelector("input[name='level']:checked")?.value;
 
       try {
@@ -73,7 +73,12 @@
           createdBy: currentUser.uid,
           createdAt: new Date().toISOString()
         });
-        alert("Tournament submitted successfully!");
+
+        // Show green checkmark
+        const checkmark = document.getElementById("success-check");
+        checkmark.classList.add("visible");
+        setTimeout(() => checkmark.classList.remove("visible"), 2000);
+
         document.getElementById("tournament-form").reset();
       } catch (err) {
         alert("Error: " + err.message);
@@ -163,7 +168,9 @@
       <!-- Instruction -->
       <p style="color:#e65c00; font-weight:bold;">Please sign in with Google before clicking "Submit Event".</p>
 
+      <!-- Submit button with checkmark -->
       <button type="submit" class="submit-btn">Submit Event</button>
+      <span id="success-check">✔</span>
     </form>
   </main>
 </body>
