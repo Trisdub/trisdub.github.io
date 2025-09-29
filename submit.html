@@ -8,22 +8,35 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyCfVProG4-iZ8z4r869oiBHB7OX4Fl3lMU",
-      authDomain: "volleyball-tourneys.firebaseapp.com",
-      projectId: "volleyball-tourneys",
-      storageBucket: "volleyball-tourneys.firebasestorage.app",
-      messagingSenderId: "652764056781",
-      appId: "1:652764056781:web:70f90b5a6f5357aff16d84",
-      measurementId: "G-HJF63771D7"
-    };
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { firebaseConfig } from "./config.js";
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    let currentUser = null;
+
+    async function signIn() {
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (err) {
+        alert("Google Sign-In failed: " + err.message);
+      }
+    }
+
+    async function signOutUser() {
+      await signOut(auth);
+    }
 
     async function submitTournament(e) {
       e.preventDefault();
+      if (!currentUser) {
+        alert("You must sign in with Google before submitting an event.");
+        return;
+      }
+
       const name = document.getElementById("name").value;
       const province = document.getElementById("province").value;
       const region = document.getElementById("region").value;
@@ -31,6 +44,8 @@
       const date = document.getElementById("date").value;
       const address = document.getElementById("address").value;
       const registration = document.getElementById("registration").value;
+      const organizerName = document.getElementById("organizerName").value;
+      const organizerPhone = document.getElementById("organizerPhone").value;
 
       // Level checkboxes
       const levels = [];
@@ -45,7 +60,11 @@
           date,
           address,
           registration,
-          level: levels.join(", ")
+          level: levels.join(", "),
+          organizerName,
+          organizerPhone,
+          createdBy: currentUser.uid,
+          createdAt: new Date().toISOString()
         });
         alert("Tournament submitted successfully!");
         document.getElementById("tournament-form").reset();
@@ -54,18 +73,39 @@
       }
     }
 
+    onAuthStateChanged(auth, (user) => {
+      const authStatus = document.getElementById("auth-status");
+      if (user) {
+        currentUser = user;
+        authStatus.innerHTML = `
+          <p>Signed in as ${user.displayName}</p>
+          <button onclick="signOutUser()" class="button">Sign Out</button>
+        `;
+      } else {
+        currentUser = null;
+        authStatus.innerHTML = `
+          <button onclick="signIn()" class="button">Sign In with Google</button>
+        `;
+      }
+    });
+
+    window.signIn = signIn;
+    window.signOutUser = signOutUser;
+
     window.addEventListener("DOMContentLoaded", () => {
       document.getElementById("tournament-form").addEventListener("submit", submitTournament);
     });
   </script>
 </head>
 <body>
-  <header>
+  <header class="site-header">
     <h1>Submit a Volleyball Tournament</h1>
-    <a href="index.html" class="button">Return to Home Page</a>
+    <a href="index.html" class="submit-btn">Return to Home Page</a>
   </header>
 
   <main class="form-container">
+    <div id="auth-status"></div>
+
     <form id="tournament-form">
       <label for="name">Event Name:</label>
       <input type="text" id="name" required />
@@ -101,13 +141,19 @@
       <div>
         <label><input type="checkbox" name="level" value="Open Gym" /> Open Gym</label>
         <label><input type="checkbox" name="level" value="Competitive" /> Competitive</label>
-        <label><input type="checkbox" name="level" value="Recreative" /> Recreative</label>
+        <label><input type="checkbox" name="level" value="Recreational" /> Recreational</label>
       </div>
 
       <label for="registration">Registration (link or email):</label>
       <input type="text" id="registration" />
 
-      <button type="submit" class="button">Submit Event</button>
+      <label for="organizerName">Organizer Name (private):</label>
+      <input type="text" id="organizerName" required />
+
+      <label for="organizerPhone">Organizer Phone (private):</label>
+      <input type="text" id="organizerPhone" required />
+
+      <button type="submit" class="submit-btn">Submit Event</button>
     </form>
   </main>
 </body>
