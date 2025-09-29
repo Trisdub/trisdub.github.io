@@ -108,6 +108,18 @@ form .submit-btn {
   transition: background 0.3s ease;
 }
 
-#auth-status button:hover {
-  background-color: #005fa3;
+/* ============================ */
+/* Green checkmark for successful submission */
+#success-check {
+  display: inline-block;
+  color: green;
+  font-size: 1.5em;
+  margin-left: 10px;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  vertical-align: middle;
+}
+
+#success-check.visible {
+  opacity: 1;
 }
