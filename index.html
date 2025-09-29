@@ -10,13 +10,13 @@
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background: #f4f4f4;
       display: flex;
+      background: #f4f4f4;
     }
 
     /* Sidebar */
     .sidebar {
-      width: 200px;
+      width: 220px;
       background: #fff;
       padding: 20px;
       box-shadow: 2px 0 5px rgba(0,0,0,0.1);
@@ -34,6 +34,7 @@
       padding: 8px;
       border-radius: 5px;
       border: 1px solid #ccc;
+      margin-bottom: 15px;
     }
 
     /* Main content */
@@ -135,18 +136,18 @@
     <div id="noEvents" class="no-events" style="display:none;">No upcoming tournaments</div>
   </div>
 
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
 
   <script>
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyCfVProG4-iZ8z4r869oiBHB7OX4Fl3lMU",
+      authDomain: "volleyball-tourneys.firebaseapp.com",
+      projectId: "volleyball-tourneys",
+      storageBucket: "volleyball-tourneys.firebasestorage.app",
+      messagingSenderId: "652764056781",
+      appId: "1:652764056781:web:70f90b5a6f5357aff16d84",
+      measurementId: "G-HJF63771D7"
     };
 
     const app = firebase.initializeApp(firebaseConfig);
@@ -170,7 +171,10 @@
 
         snapshot.forEach(doc => {
           const data = doc.data();
-          if(data.date >= today && (selectedProvince === '' || data.province === selectedProvince)) {
+
+          if(data.date >= today &&
+             (selectedProvince === '' || data.province === selectedProvince)) {
+
             hasUpcoming = true;
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -196,10 +200,7 @@
       }
     }
 
-    // Reload table when filter changes
     provinceFilter.addEventListener('change', loadTournaments);
-
-    // Initial load
     loadTournaments();
   </script>
 </body>
