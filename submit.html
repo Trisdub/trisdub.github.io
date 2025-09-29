@@ -56,7 +56,7 @@
       margin-top: 15px;
     }
 
-    input, textarea, button {
+    input, select, textarea, button {
       width: 100%;
       padding: 10px;
       margin-top: 5px;
@@ -102,7 +102,19 @@
       <input type="date" id="date" name="date" required>
 
       <label for="province">Province:</label>
-      <input type="text" id="province" name="province" required>
+      <select id="province" name="province" required>
+        <option value="">Select Province</option>
+        <option value="Alberta">Alberta</option>
+        <option value="British Columbia">British Columbia</option>
+        <option value="Manitoba">Manitoba</option>
+        <option value="New Brunswick">New Brunswick</option>
+        <option value="Newfoundland and Labrador">Newfoundland and Labrador</option>
+        <option value="Nova Scotia">Nova Scotia</option>
+        <option value="Ontario">Ontario</option>
+        <option value="Prince Edward Island">Prince Edward Island</option>
+        <option value="Quebec">Quebec</option>
+        <option value="Saskatchewan">Saskatchewan</option>
+      </select>
 
       <label for="region">Region:</label>
       <input type="text" id="region" name="region" required>
@@ -133,18 +145,18 @@
     </form>
   </div>
 
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
 
   <script>
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyCfVProG4-iZ8z4r869oiBHB7OX4Fl3lMU",
+      authDomain: "volleyball-tourneys.firebaseapp.com",
+      projectId: "volleyball-tourneys",
+      storageBucket: "volleyball-tourneys.firebasestorage.app",
+      messagingSenderId: "652764056781",
+      appId: "1:652764056781:web:70f90b5a6f5357aff16d84",
+      measurementId: "G-HJF63771D7"
     };
 
     const app = firebase.initializeApp(firebaseConfig);
@@ -153,9 +165,8 @@
     document.getElementById('tournamentForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      // Collect all checked levels
-      const levelCheckboxes = document.querySelectorAll('input[name="level"]:checked');
-      const levels = Array.from(levelCheckboxes).map(cb => cb.value);
+      const levels = Array.from(document.querySelectorAll('input[name="level"]:checked'))
+                          .map(cb => cb.value);
 
       const tournamentData = {
         name: document.getElementById('name').value,
