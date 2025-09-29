@@ -48,11 +48,11 @@
       const organizerName = document.getElementById("organizerName").value;
       const organizerPhone = document.getElementById("organizerPhone").value;
 
-      // Validate phone number (basic format: 10 digits, optional spaces/dashes/parentheses)
+      // Validate phone number
       const phoneRegex = /^\s*(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4})(?: *x(\d+))?\s*$/;
       if (!phoneRegex.test(organizerPhone)) {
         alert("Invalid phone number");
-        return; // stop submission
+        return;
       }
 
       // Level radio button (single value)
@@ -81,15 +81,14 @@
     }
 
     onAuthStateChanged(auth, (user) => {
+      currentUser = user;
       const authStatus = document.getElementById("auth-status");
       if (user) {
-        currentUser = user;
         authStatus.innerHTML = `
           <p>Signed in as ${user.displayName}</p>
           <button onclick="signOutUser()" class="submit-btn">Sign Out</button>
         `;
       } else {
-        currentUser = null;
         authStatus.innerHTML = `
           <button onclick="signIn()" class="submit-btn">Sign In with Google</button>
         `;
@@ -111,8 +110,6 @@
   </header>
 
   <main class="form-container">
-    <div id="auth-status"></div>
-
     <form id="tournament-form">
       <label for="name">Event Name:</label>
       <input type="text" id="name" required />
@@ -159,6 +156,12 @@
 
       <label for="organizerPhone">Organizer Phone (private):</label>
       <input type="text" id="organizerPhone" required />
+
+      <!-- Google Sign-In button moved here -->
+      <div id="auth-status" style="margin-bottom: 15px;"></div>
+
+      <!-- Instruction -->
+      <p style="color:#e65c00; font-weight:bold;">Please sign in with Google before clicking "Submit Event".</p>
 
       <button type="submit" class="submit-btn">Submit Event</button>
     </form>
