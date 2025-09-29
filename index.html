@@ -6,20 +6,9 @@
   <title>Volleyball Tournaments</title>
   <link rel="stylesheet" href="style.css" />
   <script type="module">
-    // Firebase imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-    // Your Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyCfVProG4-iZ8z4r869oiBHB7OX4Fl3lMU",
-      authDomain: "volleyball-tourneys.firebaseapp.com",
-      projectId: "volleyball-tourneys",
-      storageBucket: "volleyball-tourneys.firebasestorage.app",
-      messagingSenderId: "652764056781",
-      appId: "1:652764056781:web:70f90b5a6f5357aff16d84",
-      measurementId: "G-HJF63771D7"
-    };
+    import { firebaseConfig } from "./config.js";
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -28,7 +17,7 @@
       const tableBody = document.getElementById("tournament-table-body");
       const provinceFilter = document.getElementById("province-filter");
 
-      tableBody.innerHTML = "<tr><td colspan='7'>Loading tournaments...</td></tr>";
+      tableBody.innerHTML = "<tr><td colspan='8'>Loading tournaments...</td></tr>";
 
       const q = query(collection(db, "tournaments"), orderBy("date", "asc"));
       const snapshot = await getDocs(q);
@@ -50,7 +39,7 @@
       tableBody.innerHTML = "";
 
       if (tournaments.length === 0) {
-        tableBody.innerHTML = "<tr><td colspan='7'>No upcoming tournaments</td></tr>";
+        tableBody.innerHTML = "<tr><td colspan='8'>No upcoming tournaments</td></tr>";
         return;
       }
 
@@ -64,7 +53,7 @@
           <td>${t.city || ""}</td>
           <td>${t.date || ""}</td>
           <td>${t.level || ""}</td>
-          <td>${t.registration || ""}</td>
+          <td><a href="${t.registration || "#"}" target="_blank">${t.registration || ""}</a></td>
           <td>${t.address || ""}</td>
         `;
         tableBody.appendChild(row);
@@ -79,9 +68,9 @@
   </script>
 </head>
 <body>
-  <header>
+  <header class="site-header">
     <h1>Volleyball Tournaments</h1>
-    <a href="submit.html" class="button">Submit Your Event</a>
+    <a href="submit.html" class="submit-btn">Submit Your Event</a>
   </header>
 
   <aside class="sidebar">
@@ -101,7 +90,7 @@
     </select>
   </aside>
 
-  <main>
+  <main class="content">
     <table>
       <thead>
         <tr>
@@ -116,7 +105,7 @@
         </tr>
       </thead>
       <tbody id="tournament-table-body">
-        <tr><td colspan="7">Loading tournaments...</td></tr>
+        <tr><td colspan="8">Loading tournaments...</td></tr>
       </tbody>
     </table>
   </main>
