@@ -48,9 +48,8 @@
       const organizerName = document.getElementById("organizerName").value;
       const organizerPhone = document.getElementById("organizerPhone").value;
 
-      // Level checkboxes
-      const levels = [];
-      document.querySelectorAll("input[name='level']:checked").forEach(cb => levels.push(cb.value));
+      // Level radio button (single value)
+      const levelSelected = document.querySelector("input[name='level']:checked")?.value;
 
       try {
         await addDoc(collection(db, "tournaments"), {
@@ -61,7 +60,7 @@
           date,
           address,
           registration,
-          level: levels.join(", "),
+          level: levelSelected || "",
           organizerName,
           organizerPhone,
           createdBy: currentUser.uid,
@@ -140,9 +139,9 @@
 
       <label>Level:</label>
       <div>
-        <label><input type="checkbox" name="level" value="Open Gym" /> Open Gym</label>
-        <label><input type="checkbox" name="level" value="Competitive" /> Competitive</label>
-        <label><input type="checkbox" name="level" value="Recreational" /> Recreational</label>
+        <label><input type="radio" name="level" value="Open Gym" required /> Open Gym</label>
+        <label><input type="radio" name="level" value="Competitive" /> Competitive</label>
+        <label><input type="radio" name="level" value="Recreational" /> Recreational</label>
       </div>
 
       <label for="registration">Registration (link or email):</label>
