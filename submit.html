@@ -1,177 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Submit a Volleyball Tournament</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="submit-style.css" />
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { firebaseConfig } from "./config.js";
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
-
-    let currentUser = null;
-
-    async function signIn() {
-      try {
-        await signInWithPopup(auth, provider);
-      } catch (err) {
-        alert("Google Sign-In failed: " + err.message);
-      }
-    }
-
-    async function signOutUser() {
-      await signOut(auth);
-    }
-
-    async function submitTournament(e) {
-      e.preventDefault();
-      if (!currentUser) {
-        alert("You must sign in with Google before submitting an event.");
-        return;
-      }
-
-      const name = document.getElementById("name").value;
-      const province = document.getElementById("province").value;
-      const region = document.getElementById("region").value;
-      const city = document.getElementById("city").value;
-      const date = document.getElementById("date").value;
-      const address = document.getElementById("address").value;
-      const registration = document.getElementById("registration").value;
-      const organizerName = document.getElementById("organizerName").value;
-      const organizerPhone = document.getElementById("organizerPhone").value;
-
-      // Validate phone number
-      const phoneRegex = /^\s*(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4})(?: *x(\d+))?\s*$/;
-      if (!phoneRegex.test(organizerPhone)) {
-        alert("Invalid phone number");
-        return;
-      }
-
-      // Level radio button
-      const levelSelected = document.querySelector("input[name='level']:checked")?.value;
-
-      try {
-        await addDoc(collection(db, "tournaments"), {
-          name,
-          province,
-          region,
-          city,
-          date,
-          address,
-          registration,
-          level: levelSelected || "",
-          organizerName,
-          organizerPhone,
-          createdBy: currentUser.uid,
-          createdAt: new Date().toISOString()
-        });
-
-        // Show green checkmark
-        const checkmark = document.getElementById("success-check");
-        checkmark.classList.add("visible");
-        setTimeout(() => checkmark.classList.remove("visible"), 2000);
-
-        document.getElementById("tournament-form").reset();
-      } catch (err) {
-        alert("Error: " + err.message);
-      }
-    }
-
-    onAuthStateChanged(auth, (user) => {
-      currentUser = user;
-      const authStatus = document.getElementById("auth-status");
-      if (user) {
-        authStatus.innerHTML = `
-          <p>Signed in as ${user.displayName}</p>
-          <button onclick="signOutUser()" class="submit-btn">Sign Out</button>
-        `;
-      } else {
-        authStatus.innerHTML = `
-          <button onclick="signIn()" class="submit-btn">Sign In with Google</button>
-        `;
-      }
-    });
-
-    window.signIn = signIn;
-    window.signOutUser = signOutUser;
-
-    window.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("tournament-form").addEventListener("submit", submitTournament);
-    });
-  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Submit Event</title>
+  <link rel="stylesheet" href="submit-style.css">
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+  <script src="firebase-config.js"></script>
 </head>
 <body>
   <header class="site-header">
-    <h1>Submit a Volleyball Tournament</h1>
+    <h1>Submit Event</h1>
     <a href="index.html" class="submit-btn">Return to Home Page</a>
   </header>
 
-  <main class="form-container">
-    <form id="tournament-form">
-      <label for="name">Event Name:</label>
-      <input type="text" id="name" required />
+  <div class="form-container">
+    <h2>Create Your Event</h2>
+    
+    <!-- Authentication Status -->
+    <div id="auth-status">
+      <p>You must be logged in to submit an event.</p>
+      <a href="auth.html" class="submit-btn">Create Account / Log In</a>
+    </div>
 
-      <label for="province">Province:</label>
-      <select id="province" required>
-        <option value="">Select a province</option>
-        <option value="Alberta">Alberta</option>
-        <option value="British Columbia">British Columbia</option>
-        <option value="Manitoba">Manitoba</option>
-        <option value="New Brunswick">New Brunswick</option>
-        <option value="Newfoundland and Labrador">Newfoundland and Labrador</option>
-        <option value="Nova Scotia">Nova Scotia</option>
-        <option value="Ontario">Ontario</option>
-        <option value="Prince Edward Island">Prince Edward Island</option>
-        <option value="Quebec">Quebec</option>
-        <option value="Saskatchewan">Saskatchewan</option>
+    <!-- Event Form (hidden until logged in) -->
+    <form id="event-form" style="display: none;">
+      <label for="event-name">Event Name:</label>
+      <input type="text" id="event-name" required>
+
+      <label for="event-date">Event Date:</label>
+      <input type="date" id="event-date" required>
+
+      <label for="event-location">Event Location:</label>
+      <input type="text" id="event-location" required>
+
+      <label for="event-category">Event Category:</label>
+      <select id="event-category" required>
+        <option value="">Select...</option>
+        <option value="tournament">Tournament</option>
+        <option value="friendly">Friendly Match</option>
+        <option value="training">Training</option>
       </select>
 
-      <label for="region">Region:</label>
-      <input type="text" id="region" />
+      <label for="organizer-phone">Organizer Phone:</label>
+      <input type="text" id="organizer-phone" placeholder="123-456-7890" required>
 
-      <label for="city">City:</label>
-      <input type="text" id="city" required />
-
-      <label for="date">Date:</label>
-      <input type="date" id="date" required />
-
-      <label for="address">Address:</label>
-      <input type="text" id="address" required />
-
-      <label>Level:</label>
-      <div>
-        <label><input type="radio" name="level" value="Open Gym" required /> Open Gym</label>
-        <label><input type="radio" name="level" value="Competitive" /> Competitive</label>
-        <label><input type="radio" name="level" value="Recreational" /> Recreational</label>
-      </div>
-
-      <label for="registration">Registration (link or email):</label>
-      <input type="text" id="registration" />
-
-      <label for="organizerName">Organizer Name (private):</label>
-      <input type="text" id="organizerName" required />
-
-      <label for="organizerPhone">Organizer Phone (private):</label>
-      <input type="text" id="organizerPhone" required />
-
-      <!-- Google Sign-In button moved here -->
-      <div id="auth-status" style="margin-bottom: 15px;"></div>
-
-      <!-- Instruction -->
-      <p style="color:#e65c00; font-weight:bold;">Please sign in with Google before clicking "Submit Event".</p>
-
-      <!-- Submit button with checkmark -->
       <button type="submit" class="submit-btn">Submit Event</button>
-      <span id="success-check">✔</span>
+      <span class="checkmark">✔</span>
     </form>
-  </main>
+  </div>
+
+  <script src="submit.js"></script>
 </body>
 </html>
