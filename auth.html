@@ -3,43 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Create Account / Log In</title>
+  <title>Login / Create Account</title>
   <link rel="stylesheet" href="submit-style.css">
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
   <script src="firebase-config.js"></script>
-  <script defer src="auth.js"></script>
+  <script src="auth.js" defer></script>
 </head>
 <body>
   <header class="site-header">
     <h1>Account</h1>
-    <a href="submit.html" class="submit-btn">Back to Submit</a>
+    <a href="index.html" class="submit-btn">Return to Home Page</a>
   </header>
 
   <div class="form-container">
-    <h2>Create Account</h2>
-    <form id="signup-form">
-      <label for="signup-email">Email:</label>
-      <input type="email" id="signup-email" required>
-      
-      <label for="signup-password">Password:</label>
-      <input type="password" id="signup-password" required>
-      
-      <button type="submit" class="submit-btn">Sign Up</button>
+    <h2>Login or Create Account</h2>
+
+    <form id="auth-form">
+      <label for="email">Email:</label>
+      <input type="email" id="email" required>
+
+      <label for="password">Password:</label>
+      <input type="password" id="password" required>
+
+      <button type="button" id="login-btn" class="submit-btn">Log In</button>
+      <button type="button" id="signup-btn" class="submit-btn">Create Account</button>
     </form>
 
-    <h2>Log In</h2>
-    <form id="login-form">
-      <label for="login-email">Email:</label>
-      <input type="email" id="login-email" required>
-      
-      <label for="login-password">Password:</label>
-      <input type="password" id="login-password" required>
-      
-      <button type="submit" class="submit-btn">Log In</button>
-    </form>
-    
-    <button id="logout-btn" class="submit-btn" style="display:none;">Log Out</button>
+    <div id="auth-message"></div>
   </div>
 </body>
 </html>
