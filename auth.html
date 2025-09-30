@@ -4,34 +4,36 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Authentication</title>
-  <link rel="stylesheet" href="auth-style.css">
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js"></script>
+  <link rel="stylesheet" href="submit-style.css"> <!-- Using the same style as submit page -->
 </head>
 <body>
-  <h2>Account Access</h2>
+  <header class="site-header">
+    <h1>Volleyball Tournaments - Sign In</h1>
+  </header>
 
-  <!-- Create Account Section -->
-  <div class="auth-section">
-    <button id="toggle-create">Create Account</button>
-    <div id="create-form" class="form-container" style="display: none;">
-      <input type="email" id="create-email" placeholder="Email" required>
-      <input type="password" id="create-password" placeholder="Password" required>
-      <button id="create-btn">Sign Up</button>
+  <main class="form-container">
+    <!-- Create Account -->
+    <div class="auth-section">
+      <button class="submit-btn" id="toggle-create">Create Account</button>
+      <div id="create-form" style="display: none; margin-top: 15px;">
+        <input type="email" id="create-email" placeholder="Email" required>
+        <input type="password" id="create-password" placeholder="Password" required>
+        <button class="submit-btn" id="create-btn">Sign Up</button>
+      </div>
     </div>
-  </div>
 
-  <!-- Login Section -->
-  <div class="auth-section">
-    <button id="toggle-login">Log In</button>
-    <div id="login-form" class="form-container" style="display: none;">
-      <input type="email" id="login-email" placeholder="Email" required>
-      <input type="password" id="login-password" placeholder="Password" required>
-      <button id="login-btn">Log In</button>
+    <!-- Log In -->
+    <div class="auth-section" style="margin-top: 20px;">
+      <button class="submit-btn" id="toggle-login">Log In</button>
+      <div id="login-form" style="display: none; margin-top: 15px;">
+        <input type="email" id="login-email" placeholder="Email" required>
+        <input type="password" id="login-password" placeholder="Password" required>
+        <button class="submit-btn" id="login-btn">Log In</button>
+      </div>
     </div>
-  </div>
 
-  <p id="auth-message"></p>
+    <p id="auth-message" style="text-align: center; margin-top: 20px;"></p>
+  </main>
 
   <script type="module" src="auth.js"></script>
 </body>
