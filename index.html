@@ -1,132 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Volleyball Tournaments</title>
-  <link rel="stylesheet" href="style.css" />
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { firebaseConfig } from "./config.js";
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
-
-    let currentUser = null;
-
-    async function signIn() {
-      try {
-        await signInWithPopup(auth, provider);
-      } catch (err) {
-        alert("Google Sign-In failed: " + err.message);
-      }
-    }
-
-    async function signOutUser() {
-      await signOut(auth);
-    }
-
-    async function loadTournaments() {
-      const tableBody = document.getElementById("tournament-table-body");
-      const provinceFilter = document.getElementById("province-filter");
-
-      tableBody.innerHTML = "<tr><td colspan='9'>Loading tournaments...</td></tr>";
-
-      const q = query(collection(db, "tournaments"), orderBy("date", "asc"));
-      const snapshot = await getDocs(q);
-
-      let tournaments = [];
-      snapshot.forEach(docSnap => tournaments.push({ id: docSnap.id, ...docSnap.data() }));
-
-      // Filter out past tournaments
-      const today = new Date();
-      tournaments = tournaments.filter(t => new Date(t.date) >= today);
-
-      // Apply province filter
-      const selectedProvince = provinceFilter.value;
-      if (selectedProvince) {
-        tournaments = tournaments.filter(t => t.province === selectedProvince);
-      }
-
-      // Clear table
-      tableBody.innerHTML = "";
-
-      if (tournaments.length === 0) {
-        tableBody.innerHTML = "<tr><td colspan='9'>No upcoming tournaments</td></tr>";
-        return;
-      }
-
-      // Insert rows
-      tournaments.forEach(t => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${t.name || ""}</td>
-          <td>${t.province || ""}</td>
-          <td>${t.region || ""}</td>
-          <td>${t.city || ""}</td>
-          <td>${t.date || ""}</td>
-          <td>${t.level || ""}</td>
-          <td>${t.registration || ""}</td>
-          <td>${t.address || ""}</td>
-          <td>
-            ${t.createdBy === currentUser?.uid ? `<button class="delete-btn" data-id="${t.id}">Delete Event</button>` : ""}
-          </td>
-        `;
-        tableBody.appendChild(row);
-      });
-
-      // Add delete button listeners
-      document.querySelectorAll(".delete-btn").forEach(btn => {
-        btn.addEventListener("click", async (e) => {
-          const docId = e.target.dataset.id;
-          if (confirm("Are you sure you want to delete this tournament?")) {
-            try {
-              await deleteDoc(doc(db, "tournaments", docId));
-              loadTournaments();
-            } catch (err) {
-              alert("Error: " + err.message);
-            }
-          }
-        });
-      });
-    }
-
-    onAuthStateChanged(auth, (user) => {
-      const authStatus = document.getElementById("auth-status");
-      currentUser = user;
-      if (user) {
-        authStatus.innerHTML = `
-          <p>Signed in as ${user.displayName}</p>
-          <button onclick="signOutUser()" class="submit-btn">Sign Out</button>
-        `;
-      } else {
-        authStatus.innerHTML = `
-          <button onclick="signIn()" class="submit-btn">Sign In with Google</button>
-        `;
-      }
-      loadTournaments();
-    });
-
-    window.signIn = signIn;
-    window.signOutUser = signOutUser;
-
-    window.addEventListener("DOMContentLoaded", () => {
-      const provinceFilter = document.getElementById("province-filter");
-      provinceFilter.addEventListener("change", loadTournaments);
-      loadTournaments();
-    });
-  </script>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js"></script>
 </head>
 <body>
   <header class="site-header">
     <h1>Volleyball Tournaments</h1>
-    <a href="submit.html" class="submit-btn">Submit Your Event</a>
-    <div id="auth-status" style="display:inline-block; margin-left:20px;"></div>
   </header>
+
+  <div style="text-align: center; margin: 20px;">
+    <button class="submit-btn" id="auth-button">Login / Signup</button>
+    <button class="submit-btn" id="logout-button" style="display:none;">Logout</button>
+    <p id="user-email"></p>
+  </div>
 
   <aside class="sidebar">
     <h3>Filter by Province</h3>
@@ -157,13 +48,104 @@
           <th>Level</th>
           <th>Registration</th>
           <th>Address</th>
-          <th>Actions</th>
         </tr>
       </thead>
       <tbody id="tournament-table-body">
-        <tr><td colspan="9">Loading tournaments...</td></tr>
+        <tr><td colspan="8">Loading tournaments...</td></tr>
       </tbody>
     </table>
   </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+    import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCfVProG4-iZ8z4r869oiBHB7OX4Fl3lMU",
+      authDomain: "volleyball-tourneys.firebaseapp.com",
+      projectId: "volleyball-tourneys",
+      storageBucket: "volleyball-tourneys.appspot.com",
+      messagingSenderId: "640577250571",
+      appId: "1:640577250571:web:0cd0feca9326a5e36d1e92"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const authButton = document.getElementById("auth-button");
+    const logoutButton = document.getElementById("logout-button");
+    const userEmail = document.getElementById("user-email");
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        userEmail.textContent = `Signed in as: ${user.email}`;
+        authButton.style.display = "none";
+        logoutButton.style.display = "inline-block";
+      } else {
+        userEmail.textContent = "";
+        authButton.style.display = "inline-block";
+        logoutButton.style.display = "none";
+      }
+    });
+
+    authButton.addEventListener("click", () => {
+      window.location.href = "auth.html";
+    });
+
+    logoutButton.addEventListener("click", async () => {
+      await signOut(auth);
+      alert("You have logged out.");
+    });
+
+    async function loadTournaments() {
+      const tableBody = document.getElementById("tournament-table-body");
+      const provinceFilter = document.getElementById("province-filter");
+
+      tableBody.innerHTML = "<tr><td colspan='8'>Loading tournaments...</td></tr>";
+
+      const q = query(collection(db, "tournaments"), orderBy("date", "asc"));
+      const snapshot = await getDocs(q);
+
+      let tournaments = [];
+      snapshot.forEach(doc => tournaments.push(doc.data()));
+
+      const today = new Date();
+      tournaments = tournaments.filter(t => new Date(t.date) >= today);
+
+      const selectedProvince = provinceFilter.value;
+      if (selectedProvince) {
+        tournaments = tournaments.filter(t => t.province === selectedProvince);
+      }
+
+      tableBody.innerHTML = "";
+
+      if (tournaments.length === 0) {
+        tableBody.innerHTML = "<tr><td colspan='8'>No upcoming tournaments</td></tr>";
+        return;
+      }
+
+      tournaments.forEach(t => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${t.name || ""}</td>
+          <td>${t.province || ""}</td>
+          <td>${t.region || ""}</td>
+          <td>${t.city || ""}</td>
+          <td>${t.date || ""}</td>
+          <td>${t.level || ""}</td>
+          <td>${t.registration || ""}</td>
+          <td>${t.address || ""}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("province-filter").addEventListener("change", loadTournaments);
+      loadTournaments();
+    });
+  </script>
 </body>
 </html>
