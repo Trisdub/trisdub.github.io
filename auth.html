@@ -4,92 +4,35 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Authentication</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="auth-style.css">
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js"></script>
 </head>
 <body>
-  <h1>Authentication</h1>
+  <h2>Account Access</h2>
 
-  <!-- Toggle buttons -->
-  <div style="margin-bottom: 20px;">
-    <button onclick="toggleForm('signup')">Create Account</button>
-    <button onclick="toggleForm('login')">Log In</button>
+  <!-- Create Account Section -->
+  <div class="auth-section">
+    <button id="toggle-create">Create Account</button>
+    <div id="create-form" class="form-container" style="display: none;">
+      <input type="email" id="create-email" placeholder="Email" required>
+      <input type="password" id="create-password" placeholder="Password" required>
+      <button id="create-btn">Sign Up</button>
+    </div>
   </div>
 
-  <!-- Sign Up Form (hidden by default) -->
-  <div id="signupForm" style="display: none;">
-    <h2>Create an Account</h2>
-    <form id="signup-form">
-      <input type="email" id="signup-email" placeholder="Email" required>
-      <input type="password" id="signup-password" placeholder="Password" required>
-      <button type="submit">Sign Up</button>
-    </form>
-  </div>
-
-  <!-- Login Form (hidden by default) -->
-  <div id="loginForm" style="display: none;">
-    <h2>Log In</h2>
-    <form id="login-form">
+  <!-- Login Section -->
+  <div class="auth-section">
+    <button id="toggle-login">Log In</button>
+    <div id="login-form" class="form-container" style="display: none;">
       <input type="email" id="login-email" placeholder="Email" required>
       <input type="password" id="login-password" placeholder="Password" required>
-      <button type="submit">Log In</button>
-    </form>
+      <button id="login-btn">Log In</button>
+    </div>
   </div>
 
-  <script type="module">
-    // Import Firebase config
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } 
-      from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+  <p id="auth-message"></p>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCfVProG4-iZ8z4r869oiBHB7OX4Fl3lMU",
-      authDomain: "volleyball-tourneys.firebaseapp.com",
-      projectId: "volleyball-tourneys",
-      storageBucket: "volleyball-tourneys.appspot.com",
-      messagingSenderId: "640577250571",
-      appId: "1:640577250571:web:0cd0feca9326a5e36d1e92"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-
-    // Toggle between forms
-    window.toggleForm = function(form) {
-      document.getElementById("signupForm").style.display = form === 'signup' ? "block" : "none";
-      document.getElementById("loginForm").style.display = form === 'login' ? "block" : "none";
-    };
-
-    // Handle Sign Up
-    document.getElementById("signup-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = document.getElementById("signup-email").value;
-      const password = document.getElementById("signup-password").value;
-
-      try {
-        await createUserWithEmailAndPassword(auth, email, password);
-        alert("Account created successfully!");
-        window.location.href = "submit.html";
-      } catch (error) {
-        alert(error.message);
-      }
-    });
-
-    // Handle Login
-    document.getElementById("login-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = document.getElementById("login-email").value;
-      const password = document.getElementById("login-password").value;
-
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-        alert("Logged in successfully!");
-        window.location.href = "submit.html";
-      } catch (error) {
-        alert(error.message);
-      }
-    });
-  </script>
+  <script type="module" src="auth.js"></script>
 </body>
 </html>
