@@ -1,43 +1,43 @@
 // Initialize Firebase Auth
 const auth = firebase.auth();
 
-// Sign Up
-document.getElementById("signup-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const email = document.getElementById("signup-email").value;
-  const password = document.getElementById("signup-password").value;
+// Elements
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+const loginBtn = document.getElementById("login-btn");
+const signupBtn = document.getElementById("signup-btn");
+const authMessage = document.getElementById("auth-message");
 
-  try {
-    await auth.createUserWithEmailAndPassword(email, password);
-    alert("Account created! You are now logged in.");
-    window.location.href = "submit.html";
-  } catch (error) {
-    alert(error.message);
-  }
+// Login
+loginBtn.addEventListener("click", () => {
+  const email = emailInput.value;
+  const password = passwordInput.value;
+
+  auth.signInWithEmailAndPassword(email, password)
+    .then(() => {
+      authMessage.textContent = "Login successful! Redirecting...";
+      setTimeout(() => {
+        window.location.href = "submit.html";
+      }, 1000);
+    })
+    .catch(error => {
+      authMessage.textContent = "Error: " + error.message;
+    });
 });
 
-// Log In
-document.getElementById("login-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const email = document.getElementById("login-email").value;
-  const password = document.getElementById("login-password").value;
+// Create Account
+signupBtn.addEventListener("click", () => {
+  const email = emailInput.value;
+  const password = passwordInput.value;
 
-  try {
-    await auth.signInWithEmailAndPassword(email, password);
-    alert("Logged in successfully!");
-    window.location.href = "submit.html";
-  } catch (error) {
-    alert(error.message);
-  }
-});
-
-// Log Out
-document.getElementById("logout-btn").addEventListener("click", async () => {
-  try {
-    await auth.signOut();
-    alert("Logged out!");
-    location.reload();
-  } catch (error) {
-    alert(error.message);
-  }
+  auth.createUserWithEmailAndPassword(email, password)
+    .then(() => {
+      authMessage.textContent = "Account created! Redirecting...";
+      setTimeout(() => {
+        window.location.href = "submit.html";
+      }, 1000);
+    })
+    .catch(error => {
+      authMessage.textContent = "Error: " + error.message;
+    });
 });
