@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Account</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Your Account</h1>
+  <p id="userEmail"></p>
+
+  <h2>Your Events</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Date</th>
+        <th>Location</th>
+        <th>Province</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="userEventsTable"></tbody>
+  </table>
+
+  <button id="deleteAllBtn" style="margin-top:20px; display:none;">Delete All Events</button>
+  
+  <br><br>
+  <a href="index.html">Back to Home</a>
+
+  <script type="module" src="account.js"></script>
+</body>
+</html>
