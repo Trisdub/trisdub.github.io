@@ -1,79 +1,64 @@
+/* style.css (home page styles) */
 body {
   font-family: Arial, sans-serif;
   margin: 0;
-  padding: 0;
   background: #f4f4f9;
   color: #333;
 }
 
 .site-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 20px;
-  background: #f8f9fa;
-  border-bottom: 2px solid #ddd;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:15px 20px;
+  background:#f8f9fa;
+  border-bottom:2px solid #ddd;
 }
 
-.site-header h1 { margin: 0; font-size: 1.5em; }
+.site-header h1 { margin:0; font-size:1.5em; }
 
-.submit-btn, .refresh-btn {
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-weight: bold;
-  text-decoration: none;
-  color: white;
-  margin-left: 10px;
+.submit-btn {
+  padding:8px 14px;
+  border-radius:6px;
+  font-weight:bold;
+  color:white;
+  background:#ff6600;
+  text-decoration:none;
+  border: none;
   cursor: pointer;
 }
 
-.submit-btn { background: #0077cc; }
-.submit-btn:hover { background: #005fa3; }
+.submit-btn:hover { background:#e65c00; transform: scale(1.02); }
 
-.refresh-btn { background: #28a745; }
-.refresh-btn:hover { background: #1e7e34; }
+.content { max-width:1100px; margin:20px auto; padding:0 20px; display:flex; gap:20px; }
 
-.content { max-width: 1000px; margin: 20px auto; padding: 0 20px; }
-
-select { margin-bottom: 15px; padding: 5px; font-size: 1em; }
+.sidebar { width:240px; }
+main { flex:1; }
 
 table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-  background: white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+  background:white;
+  box-shadow:0 2px 4px rgba(0,0,0,0.06);
 }
 
 table th, table td {
-  border: 1px solid #ccc;
-  padding: 8px;
-  text-align: left;
+  border:1px solid #ccc;
+  padding:8px;
+  text-align:left;
 }
 
-table th { background: #0077cc; color: white; }
+table th { background:#0077cc; color:white; }
 
-table tr:nth-child(even) { background: #f9f9f9; }
+.empty-message { text-align:center; padding:20px; color:#666; font-style:italic; }
 
-.empty-message {
-  text-align: center;
-  padding: 20px;
-  font-style: italic;
-  color: #666;
-}
-/* Style for the "Submit Your Event" button */
-.submit-btn {
-  display: inline-block;
-  padding: 10px 20px;
-  background-color: #ff6600;  /* Orange color */
+.delete-btn {
+  background: #d9534f;
   color: white;
-  text-decoration: none;
-  font-weight: bold;
-  border-radius: 8px;
-  transition: background-color 0.3s ease, transform 0.2s ease;
+  border: none;
+  padding:6px 8px;
+  border-radius:6px;
+  cursor:pointer;
 }
-
-.submit-btn:hover {
-  background-color: #e65c00;
-  transform: scale(1.05);
-}
+.delete-btn:hover { background:#c9302c; }
