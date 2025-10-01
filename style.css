@@ -1,64 +1,113 @@
-/* style.css (home page styles) */
+/* Reset & Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 body {
   font-family: Arial, sans-serif;
-  margin: 0;
-  background: #f4f4f9;
+  background: #f8f9fa;
   color: #333;
+  line-height: 1.6;
+  padding: 0;
+  margin: 0;
 }
 
-.site-header {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:15px 20px;
-  background:#f8f9fa;
-  border-bottom:2px solid #ddd;
-}
-
-.site-header h1 { margin:0; font-size:1.5em; }
-
-.submit-btn {
-  padding:8px 14px;
-  border-radius:6px;
-  font-weight:bold;
-  color:white;
-  background:#ff6600;
-  text-decoration:none;
-  border: none;
-  cursor: pointer;
-}
-
-.submit-btn:hover { background:#e65c00; transform: scale(1.02); }
-
-.content { max-width:1100px; margin:20px auto; padding:0 20px; display:flex; gap:20px; }
-
-.sidebar { width:240px; }
-main { flex:1; }
-
-table {
-  width:100%;
-  border-collapse:collapse;
-  margin-top:10px;
-  background:white;
-  box-shadow:0 2px 4px rgba(0,0,0,0.06);
-}
-
-table th, table td {
-  border:1px solid #ccc;
-  padding:8px;
-  text-align:left;
-}
-
-table th { background:#0077cc; color:white; }
-
-.empty-message { text-align:center; padding:20px; color:#666; font-style:italic; }
-
-.delete-btn {
-  background: #d9534f;
+/* Header */
+header {
+  background: #0077b6;
   color: white;
-  border: none;
-  padding:6px 8px;
-  border-radius:6px;
-  cursor:pointer;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
-.delete-btn:hover { background:#c9302c; }
+
+header h1 {
+  font-size: 1.5rem;
+}
+
+/* Navigation Bar */
+nav {
+  display: flex;
+  gap: 10px;
+}
+
+.nav-btn {
+  background: white;
+  color: #0077b6;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.nav-btn:hover {
+  background: #caf0f8;
+}
+
+button.nav-btn {
+  font-family: inherit;
+}
+
+/* Main Content */
+main {
+  padding: 20px;
+}
+
+/* Province Filter */
+#filter-section {
+  margin-bottom: 20px;
+}
+
+#province-filter {
+  padding: 6px;
+  font-size: 1rem;
+  margin-left: 10px;
+}
+
+/* Tournament Table */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+th, td {
+  padding: 12px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+th {
+  background: #0077b6;
+  color: white;
+}
+
+tr:nth-child(even) {
+  background: #f2f2f2;
+}
+
+/* Delete Button inside table */
+.delete-btn {
+  background: #e63946;
+  color: white;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.3s;
+}
+
+.delete-btn:hover {
+  background: #d62828;
+}
