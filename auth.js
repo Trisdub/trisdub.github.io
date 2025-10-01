@@ -1,69 +1,65 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } 
-  from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCfVProG4-iZ8z4r869oiBHB7OX4Fl3lMU",
   authDomain: "volleyball-tourneys.firebaseapp.com",
   projectId: "volleyball-tourneys",
-  storageBucket: "volleyball-tourneys.appspot.com",
-  messagingSenderId: "640577250571",
-  appId: "1:640577250571:web:0cd0feca9326a5e36d1e92"
+  storageBucket: "volleyball-tourneys.firebasestorage.app",
+  messagingSenderId: "652764056781",
+  appId: "1:652764056781:web:70f90b5a6f5357aff16d84",
+  measurementId: "G-HJF63771D7"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-const toggleCreate = document.getElementById("toggle-create");
-const createForm = document.getElementById("create-form");
-
-const toggleLogin = document.getElementById("toggle-login");
-const loginForm = document.getElementById("login-form");
-
-const createBtn = document.getElementById("create-btn");
-const loginBtn = document.getElementById("login-btn");
-const authMessage = document.getElementById("auth-message");
-
-// Toggle Create Account Form
-toggleCreate.addEventListener("click", () => {
-  createForm.style.display = createForm.style.display === "none" ? "block" : "none";
-  loginForm.style.display = "none"; // hide login if open
+// Toggle forms
+document.getElementById("toggle-create").addEventListener("click", () => {
+  document.getElementById("create-form").style.display = "block";
+  document.getElementById("login-form").style.display = "none";
 });
 
-// Toggle Login Form
-toggleLogin.addEventListener("click", () => {
-  loginForm.style.display = loginForm.style.display === "none" ? "block" : "none";
-  createForm.style.display = "none"; // hide signup if open
+document.getElementById("toggle-login").addEventListener("click", () => {
+  document.getElementById("login-form").style.display = "block";
+  document.getElementById("create-form").style.display = "none";
 });
 
-// Create Account
-createBtn.addEventListener("click", async () => {
+// Create account
+document.getElementById("create-btn").addEventListener("click", async () => {
   const email = document.getElementById("create-email").value;
   const password = document.getElementById("create-password").value;
-
   try {
     await createUserWithEmailAndPassword(auth, email, password);
-    authMessage.textContent = "Account created successfully! Redirecting...";
-    authMessage.style.color = "green";
-    setTimeout(() => (window.location.href = "index.html"), 1500);
+    document.getElementById("auth-message").innerText = "Account created! You can now log in.";
   } catch (error) {
-    authMessage.textContent = error.message;
-    authMessage.style.color = "red";
+    document.getElementById("auth-message").innerText = "Error: " + error.message;
   }
 });
 
 // Login
-loginBtn.addEventListener("click", async () => {
+document.getElementById("login-btn").addEventListener("click", async () => {
   const email = document.getElementById("login-email").value;
   const password = document.getElementById("login-password").value;
-
   try {
     await signInWithEmailAndPassword(auth, email, password);
-    authMessage.textContent = "Logged in successfully! Redirecting...";
-    authMessage.style.color = "green";
-    setTimeout(() => (window.location.href = "index.html"), 1500);
+    window.location.href = "index.html";
   } catch (error) {
-    authMessage.textContent = error.message;
-    authMessage.style.color = "red";
+    document.getElementById("auth-message").innerText = "Error: " + error.message;
+  }
+});
+
+// Forgot password
+document.getElementById("forgot-password-btn").addEventListener("click", async () => {
+  const email = document.getElementById("login-email").value;
+  if (!email) {
+    document.getElementById("auth-message").innerText = "Enter your email above first.";
+    return;
+  }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    document.getElementById("auth-message").innerText = "Password reset email sent!";
+  } catch (error) {
+    document.getElementById("auth-message").innerText = "Error: " + error.message;
   }
 });
