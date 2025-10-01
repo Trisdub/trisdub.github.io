@@ -1,61 +1,68 @@
-// Initialize Firebase
-const auth = firebase.auth();
-const db = firebase.firestore();
+// submit.js (module)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { firebaseConfig } from "./config.js";
 
-// DOM elements
-const authStatus = document.getElementById("auth-status");
-const eventForm = document.getElementById("event-form");
-const successCheck = document.querySelector(".checkmark");
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-// Check if user is logged in
-auth.onAuthStateChanged(user => {
+let currentUser = null;
+
+const authStatusEl = document.getElementById("auth-status");
+const form = document.getElementById("tournament-form");
+const successCheck = document.getElementById("success-check");
+
+onAuthStateChanged(auth, (user) => {
+  currentUser = user;
   if (user) {
-    // Show form
-    authStatus.style.display = "none";
-    eventForm.style.display = "block";
+    authStatusEl.innerHTML = `
+      <p>Signed in as ${user.email}</p>
+      <button id="signout-btn" class="submit-btn">Sign Out</button>
+    `;
+    document.getElementById("signout-btn").addEventListener("click", async () => { await signOut(auth); });
   } else {
-    // Show login message
-    authStatus.style.display = "block";
-    eventForm.style.display = "none";
+    authStatusEl.innerHTML = `<a href="auth.html" class="submit-btn">Sign In / Create Account</a>`;
   }
 });
 
-// Form submission
-eventForm.addEventListener("submit", async (e) => {
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
-
-  const eventName = document.getElementById("event-name").value;
-  const eventDate = document.getElementById("event-date").value;
-  const eventLocation = document.getElementById("event-location").value;
-  const eventCategory = document.getElementById("event-category").value;
-  const organizerPhone = document.getElementById("organizer-phone").value;
-
-  // Validate phone number
-  const phonePattern = /^\d{3}-\d{3}-\d{4}$/;
-  if (!phonePattern.test(organizerPhone)) {
-    alert("Invalid phone number. Please use the format: 123-456-7890");
+  if (!currentUser) {
+    alert("You must sign in before submitting an event.");
     return;
   }
 
+  const organizerPhone = document.getElementById("organizerPhone").value.trim();
+  const phoneRegex = /^\s*(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4})(?: *x(\d+))?\s*$/;
+  if (!phoneRegex.test(organizerPhone)) {
+    alert("Invalid phone number");
+    return;
+  }
+
+  const payload = {
+    name: document.getElementById("name").value.trim(),
+    province: document.getElementById("province").value,
+    region: document.getElementById("region").value.trim(),
+    city: document.getElementById("city").value.trim(),
+    date: document.getElementById("date").value, // YYYY-MM-DD
+    address: document.getElementById("address").value.trim(),
+    registration: document.getElementById("registration").value.trim(),
+    level: document.querySelector("input[name='level']:checked")?.value || "",
+    organizerName: document.getElementById("organizerName").value.trim() || null,
+    organizerPhone: organizerPhone,
+    createdBy: currentUser.uid,
+    createdAt: serverTimestamp()
+  };
+
   try {
-    await db.collection("events").add({
-      name: eventName,
-      date: eventDate,
-      location: eventLocation,
-      category: eventCategory,
-      phone: organizerPhone,
-      createdBy: auth.currentUser.uid,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
+    await addDoc(collection(db, "tournaments"), payload);
+    // show green check briefly
     successCheck.classList.add("visible");
-    setTimeout(() => {
-      successCheck.classList.remove("visible");
-      eventForm.reset();
-    }, 2000);
-
-  } catch (error) {
-    console.error("Error adding event: ", error);
-    alert("Error: " + error.message);
+    setTimeout(()=> successCheck.classList.remove("visible"), 1800);
+    form.reset();
+  } catch (err) {
+    alert("Error: " + err.message);
   }
 });
