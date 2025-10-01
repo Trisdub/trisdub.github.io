@@ -12,6 +12,7 @@
     <div style="display:flex; gap:10px; align-items:center;">
       <a href="auth.html" class="submit-btn" id="auth-link">Log In / Sign Up</a>
       <a href="submit.html" class="submit-btn" id="submit-link" style="display:none;">Submit Event</a>
+      <a href="account.html" class="submit-btn" id="account-link" style="display:none;">Your Account</a>
       <button id="logout-btn" class="submit-btn" style="display:none;">Sign Out</button>
     </div>
   </header>
@@ -62,6 +63,7 @@
     const db = getFirestore(app);
 
     const submitLink = document.getElementById("submit-link");
+    const accountLink = document.getElementById("account-link");
     const logoutBtn = document.getElementById("logout-btn");
     const authLink = document.getElementById("auth-link");
     const provinceFilter = document.getElementById("province-filter");
@@ -81,10 +83,12 @@
       currentUser = user;
       if (user) {
         submitLink.style.display = "inline-block";
+        accountLink.style.display = "inline-block";
         logoutBtn.style.display = "inline-block";
         authLink.style.display = "none";
       } else {
         submitLink.style.display = "none";
+        accountLink.style.display = "none";
         logoutBtn.style.display = "none";
         authLink.style.display = "inline-block";
       }
