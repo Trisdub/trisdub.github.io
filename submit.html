@@ -1,57 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Submit Event</title>
-  <link rel="stylesheet" href="submit-style.css">
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
-  <script src="firebase-config.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Submit a Tournament</title>
+  <link rel="stylesheet" href="submit-style.css" />
 </head>
 <body>
   <header class="site-header">
-    <h1>Submit Event</h1>
+    <h1>Submit a Volleyball Tournament</h1>
     <a href="index.html" class="submit-btn">Return to Home Page</a>
   </header>
 
-  <div class="form-container">
-    <h2>Create Your Event</h2>
-    
-    <!-- Authentication Status -->
-    <div id="auth-status">
-      <p>You must be logged in to submit an event.</p>
-      <a href="auth.html" class="submit-btn">Create Account / Log In</a>
-    </div>
+  <main class="form-container">
+    <div id="auth-status"></div>
 
-    <!-- Event Form (hidden until logged in) -->
-    <form id="event-form" style="display: none;">
-      <label for="event-name">Event Name:</label>
-      <input type="text" id="event-name" required>
+    <form id="tournament-form">
+      <label for="name">Event Name:</label>
+      <input id="name" type="text" required />
 
-      <label for="event-date">Event Date:</label>
-      <input type="date" id="event-date" required>
-
-      <label for="event-location">Event Location:</label>
-      <input type="text" id="event-location" required>
-
-      <label for="event-category">Event Category:</label>
-      <select id="event-category" required>
-        <option value="">Select...</option>
-        <option value="tournament">Tournament</option>
-        <option value="friendly">Friendly Match</option>
-        <option value="training">Training</option>
+      <label for="province">Province:</label>
+      <select id="province" required>
+        <option value="">Select a province</option>
+        <option>Alberta</option>
+        <option>British Columbia</option>
+        <option>Manitoba</option>
+        <option>New Brunswick</option>
+        <option>Newfoundland and Labrador</option>
+        <option>Nova Scotia</option>
+        <option>Ontario</option>
+        <option>Prince Edward Island</option>
+        <option>Quebec</option>
+        <option>Saskatchewan</option>
       </select>
 
-      <label for="organizer-phone">Organizer Phone:</label>
-      <input type="text" id="organizer-phone" placeholder="123-456-7890" required>
+      <label for="region">Region:</label>
+      <input id="region" type="text" />
 
-      <button type="submit" class="submit-btn">Submit Event</button>
-      <span class="checkmark">✔</span>
+      <label for="city">City:</label>
+      <input id="city" type="text" required />
+
+      <label for="date">Date:</label>
+      <input id="date" type="date" required />
+
+      <label for="address">Address:</label>
+      <input id="address" type="text" required />
+
+      <label>Level:</label>
+      <div class="level-row">
+        <label><input type="radio" name="level" value="Open Gym" required /> Open Gym</label>
+        <label><input type="radio" name="level" value="Competitive" /> Competitive</label>
+        <label><input type="radio" name="level" value="Recreational" /> Recreational</label>
+      </div>
+
+      <label for="registration">Registration (link or email):</label>
+      <input id="registration" type="text" />
+
+      <label for="organizerName">Organizer Name (private):</label>
+      <input id="organizerName" type="text" />
+
+      <label for="organizerPhone">Organizer Phone (private):</label>
+      <input id="organizerPhone" type="text" required />
+
+      <div id="note" style="color:#e65c00; font-weight:bold; margin-top:10px;">
+        Please sign in (Account) before clicking "Submit Event".
+      </div>
+
+      <button type="submit" class="submit-btn" style="margin-top:12px;">Submit Event</button>
+      <span id="success-check">✔</span>
     </form>
-  </div>
+  </main>
 
-  <script src="submit.js"></script>
+  <script type="module" src="submit.js"></script>
 </body>
 </html>
