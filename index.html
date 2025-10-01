@@ -1,151 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Volleyball Tournaments</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js"></script>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="site-header">
     <h1>Volleyball Tournaments</h1>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <a href="auth.html" class="submit-btn" id="auth-link">Log In / Sign Up</a>
+      <a href="submit.html" class="submit-btn" id="submit-link" style="display:none;">Submit Event</a>
+      <button id="logout-btn" class="submit-btn" style="display:none;">Sign Out</button>
+    </div>
   </header>
 
-  <div style="text-align: center; margin: 20px;">
-    <button class="submit-btn" id="auth-button">Login / Signup</button>
-    <button class="submit-btn" id="logout-button" style="display:none;">Logout</button>
-    <p id="user-email"></p>
+  <div class="content">
+    <aside class="sidebar">
+      <h3>Filter by Province</h3>
+      <select id="province-filter">
+        <option value="">All Provinces</option>
+        <option>Alberta</option>
+        <option>British Columbia</option>
+        <option>Manitoba</option>
+        <option>New Brunswick</option>
+        <option>Newfoundland and Labrador</option>
+        <option>Nova Scotia</option>
+        <option>Ontario</option>
+        <option>Prince Edward Island</option>
+        <option>Quebec</option>
+        <option>Saskatchewan</option>
+      </select>
+    </aside>
+
+    <main>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th><th>Province</th><th>Region</th><th>City</th>
+            <th>Date</th><th>Level</th><th>Registration</th><th>Address</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tournament-table-body">
+          <tr><td colspan="9">Loading tournaments...</td></tr>
+        </tbody>
+      </table>
+    </main>
   </div>
-
-  <aside class="sidebar">
-    <h3>Filter by Province</h3>
-    <select id="province-filter">
-      <option value="">All Provinces</option>
-      <option value="Alberta">Alberta</option>
-      <option value="British Columbia">British Columbia</option>
-      <option value="Manitoba">Manitoba</option>
-      <option value="New Brunswick">New Brunswick</option>
-      <option value="Newfoundland and Labrador">Newfoundland and Labrador</option>
-      <option value="Nova Scotia">Nova Scotia</option>
-      <option value="Ontario">Ontario</option>
-      <option value="Prince Edward Island">Prince Edward Island</option>
-      <option value="Quebec">Quebec</option>
-      <option value="Saskatchewan">Saskatchewan</option>
-    </select>
-  </aside>
-
-  <main>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Province</th>
-          <th>Region</th>
-          <th>City</th>
-          <th>Date</th>
-          <th>Level</th>
-          <th>Registration</th>
-          <th>Address</th>
-        </tr>
-      </thead>
-      <tbody id="tournament-table-body">
-        <tr><td colspan="8">Loading tournaments...</td></tr>
-      </tbody>
-    </table>
-  </main>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-    import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyCfVProG4-iZ8z4r869oiBHB7OX4Fl3lMU",
-      authDomain: "volleyball-tourneys.firebaseapp.com",
-      projectId: "volleyball-tourneys",
-      storageBucket: "volleyball-tourneys.appspot.com",
-      messagingSenderId: "640577250571",
-      appId: "1:640577250571:web:0cd0feca9326a5e36d1e92"
-    };
+    import {
+      getFirestore, collection, query, orderBy, onSnapshot, deleteDoc, doc
+    } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    import { firebaseConfig } from "./config.js";
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    const authButton = document.getElementById("auth-button");
-    const logoutButton = document.getElementById("logout-button");
-    const userEmail = document.getElementById("user-email");
+    const submitLink = document.getElementById("submit-link");
+    const logoutBtn = document.getElementById("logout-btn");
+    const authLink = document.getElementById("auth-link");
+    const provinceFilter = document.getElementById("province-filter");
+    const tableBody = document.getElementById("tournament-table-body");
 
+    let currentUser = null;
+    let allTournaments = []; // cached snapshot data
+
+    function todayISO() {
+      const d = new Date();
+      d.setHours(0,0,0,0);
+      return d.toISOString().slice(0,10);
+    }
+
+    // Auth UI
     onAuthStateChanged(auth, (user) => {
+      currentUser = user;
       if (user) {
-        userEmail.textContent = `Signed in as: ${user.email}`;
-        authButton.style.display = "none";
-        logoutButton.style.display = "inline-block";
+        submitLink.style.display = "inline-block";
+        logoutBtn.style.display = "inline-block";
+        authLink.style.display = "none";
       } else {
-        userEmail.textContent = "";
-        authButton.style.display = "inline-block";
-        logoutButton.style.display = "none";
+        submitLink.style.display = "none";
+        logoutBtn.style.display = "none";
+        authLink.style.display = "inline-block";
       }
+      renderList(); // re-render so delete buttons show/hide correctly
     });
 
-    authButton.addEventListener("click", () => {
-      window.location.href = "auth.html";
-    });
-
-    logoutButton.addEventListener("click", async () => {
+    logoutBtn.addEventListener("click", async () => {
       await signOut(auth);
-      alert("You have logged out.");
+      // UI updates via onAuthStateChanged
     });
 
-    async function loadTournaments() {
-      const tableBody = document.getElementById("tournament-table-body");
-      const provinceFilter = document.getElementById("province-filter");
+    // Real-time subscription to tournaments (ordered by date)
+    const q = query(collection(db, "tournaments"), orderBy("date", "asc"));
+    onSnapshot(q, (snapshot) => {
+      allTournaments = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderList();
+    }, (err) => {
+      console.error("Snapshot error:", err);
+      tableBody.innerHTML = "<tr><td colspan='9'>Error loading tournaments.</td></tr>";
+    });
 
-      tableBody.innerHTML = "<tr><td colspan='8'>Loading tournaments...</td></tr>";
+    function renderList() {
+      const today = todayISO();
+      let visible = allTournaments.filter(t => {
+        if (!t.date) return false;
+        // stored as YYYY-MM-DD strings — compare lexicographically
+        return t.date >= today;
+      });
 
-      const q = query(collection(db, "tournaments"), orderBy("date", "asc"));
-      const snapshot = await getDocs(q);
-
-      let tournaments = [];
-      snapshot.forEach(doc => tournaments.push(doc.data()));
-
-      const today = new Date();
-      tournaments = tournaments.filter(t => new Date(t.date) >= today);
-
-      const selectedProvince = provinceFilter.value;
-      if (selectedProvince) {
-        tournaments = tournaments.filter(t => t.province === selectedProvince);
-      }
+      const selProv = provinceFilter.value;
+      if (selProv) visible = visible.filter(t => t.province === selProv);
 
       tableBody.innerHTML = "";
-
-      if (tournaments.length === 0) {
-        tableBody.innerHTML = "<tr><td colspan='8'>No upcoming tournaments</td></tr>";
+      if (visible.length === 0) {
+        tableBody.innerHTML = "<tr><td colspan='9' class='empty-message'>No upcoming tournaments</td></tr>";
         return;
       }
 
-      tournaments.forEach(t => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${t.name || ""}</td>
-          <td>${t.province || ""}</td>
-          <td>${t.region || ""}</td>
-          <td>${t.city || ""}</td>
-          <td>${t.date || ""}</td>
-          <td>${t.level || ""}</td>
-          <td>${t.registration || ""}</td>
-          <td>${t.address || ""}</td>
+      visible.forEach(t => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(t.name||"")}</td>
+          <td>${escapeHtml(t.province||"")}</td>
+          <td>${escapeHtml(t.region||"")}</td>
+          <td>${escapeHtml(t.city||"")}</td>
+          <td>${escapeHtml(t.date||"")}</td>
+          <td>${escapeHtml(t.level||"")}</td>
+          <td>${formatRegistration(t.registration)}</td>
+          <td>${escapeHtml(t.address||"")}</td>
+          <td>${(currentUser && t.createdBy === currentUser.uid) ? `<button class="delete-btn" data-id="${t.id}">Delete Event</button>` : ""}</td>
         `;
-        tableBody.appendChild(row);
+        tableBody.appendChild(tr);
+      });
+
+      // attach delete handlers
+      document.querySelectorAll(".delete-btn").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+          const id = e.currentTarget.dataset.id;
+          if (!confirm("Delete this tournament?")) return;
+          try {
+            await deleteDoc(doc(db, "tournaments", id));
+          } catch (err) {
+            alert("Delete failed: " + err.message);
+          }
+        });
       });
     }
 
-    window.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("province-filter").addEventListener("change", loadTournaments);
-      loadTournaments();
-    });
+    function formatRegistration(val) {
+      if (!val) return "";
+      // simple heuristic: if it looks like a URL, make link
+      if (val.startsWith("http://") || val.startsWith("https://")) {
+        return `<a href="${escapeHtml(val)}" target="_blank" rel="noopener">${escapeHtml(val)}</a>`;
+      }
+      return escapeHtml(val);
+    }
+
+    function escapeHtml(s) {
+      return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    }
+
+    provinceFilter.addEventListener("change", renderList);
   </script>
 </body>
 </html>
