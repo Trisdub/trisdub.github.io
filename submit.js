@@ -41,20 +41,21 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
-  const payload = {
-    name: document.getElementById("name").value.trim(),
-    province: document.getElementById("province").value,
-    region: document.getElementById("region").value.trim(),
-    city: document.getElementById("city").value.trim(),
-    date: document.getElementById("date").value, // YYYY-MM-DD
-    address: document.getElementById("address").value.trim(),
-    registration: document.getElementById("registration").value.trim(),
-    level: document.querySelector("input[name='level']:checked")?.value || "",
-    organizerName: document.getElementById("organizerName").value.trim() || null,
-    organizerPhone: organizerPhone,
-    createdBy: currentUser.uid,
-    createdAt: serverTimestamp()
-  };
+const payload = {
+  name: document.getElementById("name").value.trim(),
+  province: document.getElementById("province").value,
+  region: document.getElementById("region").value.trim(),
+  city: document.getElementById("city").value.trim(),
+  date: document.getElementById("date").value, // YYYY-MM-DD
+  address: document.getElementById("address").value.trim(),
+  registration: document.getElementById("registration").value.trim(),
+  level: document.querySelector("input[name='level']:checked")?.value || "",
+  organizerName: document.getElementById("organizerName").value.trim() || null,
+  organizerPhone: organizerPhone,
+  createdBy: currentUser.uid,    // <-- MUST be UID (string)
+  createdAt: serverTimestamp()
+};
+
 
   try {
     await addDoc(collection(db, "tournaments"), payload);
