@@ -9,7 +9,10 @@
 <body>
   <header class="site-header">
     <h1>Your Account</h1>
-    <a href="index.html" class="submit-btn">Back to Home</a>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <a href="index.html" class="submit-btn">Back to Home</a>
+      <button id="logout-btn" class="submit-btn" style="display:none;">Sign Out</button>
+    </div>
   </header>
 
   <div class="content">
@@ -31,7 +34,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
     import { 
       getFirestore, collection, query, where, orderBy, onSnapshot, deleteDoc, doc 
     } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
@@ -42,13 +45,22 @@
     const db = getFirestore(app);
 
     const tableBody = document.getElementById("account-tournaments-body");
+    const logoutBtn = document.getElementById("logout-btn");
 
+    // Handle auth state
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         tableBody.innerHTML = "<tr><td colspan='9'>You must be logged in to view your tournaments.</td></tr>";
+        logoutBtn.style.display = "none";
         return;
       }
 
+      logoutBtn.style.display = "inline-block";
+      logoutBtn.addEventListener("click", async () => {
+        await signOut(auth);
+      });
+
+      // Listen to only tournaments created by this user
       const q = query(
         collection(db, "tournaments"),
         where("createdBy", "==", user.uid),
@@ -79,7 +91,7 @@
           tableBody.appendChild(tr);
         });
 
-        // delete button handlers
+        // Delete button handlers
         document.querySelectorAll(".delete-btn").forEach(btn => {
           btn.addEventListener("click", async (e) => {
             const id = e.currentTarget.dataset.id;
