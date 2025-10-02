@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Your Account</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* small local tweaks so debug info is readable */
+    #debug { margin-top:12px; font-family:monospace; white-space:pre-wrap; color:#333; background:#fff; padding:10px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+    #user-info { margin-left:12px; font-size:0.95rem; color:#333; }
+    #delete-all-btn { margin-left:8px; background:#d9534f; }
+  </style>
 </head>
 <body>
   <header class="site-header">
@@ -12,12 +18,18 @@
     <div style="display:flex; gap:10px; align-items:center;">
       <a href="index.html" class="submit-btn">Back to Home</a>
       <button id="logout-btn" class="submit-btn" style="display:none;">Sign Out</button>
+      <span id="user-info"></span>
     </div>
   </header>
 
   <div class="content">
     <main>
       <h2>Your Submitted Tournaments</h2>
+
+      <div style="margin-bottom:10px;">
+        <button id="delete-all-btn" class="submit-btn" style="display:none;">Delete All My Events</button>
+      </div>
+
       <table>
         <thead>
           <tr>
@@ -29,14 +41,26 @@
           <tr><td colspan="9">Loading your tournaments...</td></tr>
         </tbody>
       </table>
+
+      <div id="debug" aria-live="polite">
+        <!-- debug output appears here -->
+      </div>
     </main>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-    import { 
-      getFirestore, collection, query, where, orderBy, onSnapshot, deleteDoc, doc 
+    import {
+      getFirestore,
+      collection,
+      query,
+      where,
+      orderBy,
+      onSnapshot,
+      getDocs,
+      deleteDoc,
+      doc
     } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
     import { firebaseConfig } from "./config.js";
 
@@ -45,66 +69,21 @@
     const db = getFirestore(app);
 
     const tableBody = document.getElementById("account-tournaments-body");
+    const debugEl = document.getElementById("debug");
+    const userInfoEl = document.getElementById("user-info");
     const logoutBtn = document.getElementById("logout-btn");
+    const deleteAllBtn = document.getElementById("delete-all-btn");
 
-    // Handle auth state
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        tableBody.innerHTML = "<tr><td colspan='9'>You must be logged in to view your tournaments.</td></tr>";
-        logoutBtn.style.display = "none";
-        return;
-      }
+    function debug(...args) {
+      // append to debug panel and console
+      const text = args.map(a => (typeof a === "string" ? a : JSON.stringify(a, null, 2))).join(" ");
+      debugEl.textContent += text + "\n\n";
+      console.log(...args);
+    }
 
-      logoutBtn.style.display = "inline-block";
-      logoutBtn.addEventListener("click", async () => {
-        await signOut(auth);
-      });
-
-      // Listen to only tournaments created by this user
-      const q = query(
-        collection(db, "tournaments"),
-        where("createdBy", "==", user.uid),
-        orderBy("date", "asc")
-      );
-
-      onSnapshot(q, (snapshot) => {
-        if (snapshot.empty) {
-          tableBody.innerHTML = "<tr><td colspan='9'>You haven't submitted any tournaments yet.</td></tr>";
-          return;
-        }
-
-        tableBody.innerHTML = "";
-        snapshot.forEach(docSnap => {
-          const t = { id: docSnap.id, ...docSnap.data() };
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${escapeHtml(t.name||"")}</td>
-            <td>${escapeHtml(t.province||"")}</td>
-            <td>${escapeHtml(t.region||"")}</td>
-            <td>${escapeHtml(t.city||"")}</td>
-            <td>${escapeHtml(t.date||"")}</td>
-            <td>${escapeHtml(t.level||"")}</td>
-            <td>${formatRegistration(t.registration)}</td>
-            <td>${escapeHtml(t.address||"")}</td>
-            <td><button class="delete-btn" data-id="${t.id}">Delete</button></td>
-          `;
-          tableBody.appendChild(tr);
-        });
-
-        // Delete button handlers
-        document.querySelectorAll(".delete-btn").forEach(btn => {
-          btn.addEventListener("click", async (e) => {
-            const id = e.currentTarget.dataset.id;
-            if (!confirm("Delete this tournament?")) return;
-            try {
-              await deleteDoc(doc(db, "tournaments", id));
-            } catch (err) {
-              alert("Delete failed: " + err.message);
-            }
-          });
-        });
-      });
-    });
+    function escapeHtml(s) {
+      return String(s || "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    }
 
     function formatRegistration(val) {
       if (!val) return "";
@@ -114,8 +93,177 @@
       return escapeHtml(val);
     }
 
-    function escapeHtml(s) {
-      return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    // unsubscribe function placeholder
+    let unsubscribe = null;
+
+    onAuthStateChanged(auth, async (user) => {
+      debugEl.textContent = ""; // clear previous debug
+      if (!user) {
+        userInfoEl.textContent = "Not signed in.";
+        logoutBtn.style.display = "none";
+        deleteAllBtn.style.display = "none";
+        tableBody.innerHTML = "<tr><td colspan='9'>You must be logged in to view your tournaments.</td></tr>";
+        return;
+      }
+
+      userInfoEl.textContent = `Signed in as ${user.email} (UID: ${user.uid})`;
+      logoutBtn.style.display = "inline-block";
+      deleteAllBtn.style.display = "inline-block";
+
+      logoutBtn.onclick = async () => { await signOut(auth); };
+
+      // If we already had an onSnapshot active, unsubscribe it first
+      if (typeof unsubscribe === "function") unsubscribe();
+
+      // Primary (real-time) query: where(createdBy == uid), ordered by date
+      try {
+        const q = query(
+          collection(db, "tournaments"),
+          where("createdBy", "==", user.uid),
+          orderBy("date", "asc")
+        );
+
+        unsubscribe = onSnapshot(q, (snapshot) => {
+          debug("Realtime snapshot received. size:", snapshot.size);
+          renderSnapshot(snapshot);
+        }, (err) => {
+          // show error from onSnapshot (e.g. permission / index errors)
+          debug("Realtime onSnapshot error:", err && err.message ? err.message : err);
+          // fallback: run a simple non-ordered query
+          fallbackCheck(user);
+        });
+
+        // also run a non-real-time check (no orderBy) to double-check
+        const fallbackQ = query(collection(db, "tournaments"), where("createdBy", "==", user.uid));
+        const fallbackSnap = await getDocs(fallbackQ);
+        debug("Fallback non-ordered query found:", fallbackSnap.size, "docs");
+        if (fallbackSnap.size === 0) {
+          debug("No docs with createdBy == UID found in fallback query.");
+        } else {
+          debug("Fallback docs IDs:", fallbackSnap.docs.map(d => ({ id: d.id, data: d.data() })));
+        }
+      } catch (err) {
+        debug("Error constructing or running primary query:", err && err.message ? err.message : err);
+        // run a fallback check
+        await fallbackCheck(user);
+      }
+
+      // Also fetch ALL tournaments (client-side) so we can inspect createdBy across documents
+      try {
+        const allSnap = await getDocs(collection(db, "tournaments"));
+        debug(`Total tournaments in DB: ${allSnap.size}`);
+        // build summary showing id -> createdBy value (if any)
+        const list = allSnap.docs.map(d => {
+          const data = d.data();
+          return { id: d.id, createdBy: data.createdBy ?? null, name: data.name ?? null };
+        });
+        debug("All docs summary (id, createdBy, name):", list);
+      } catch (err) {
+        debug("Unable to read all tournaments for debug:", err && err.message ? err.message : err);
+      }
+
+      // attach delete-all handler
+      deleteAllBtn.onclick = async () => {
+        if (!confirm("Delete ALL tournaments created by your account? This cannot be undone.")) return;
+        try {
+          // get current user's docs
+          const snap = await getDocs(query(collection(db, "tournaments"), where("createdBy", "==", user.uid)));
+          debug("Deleting docs count:", snap.size);
+          for (const d of snap.docs) {
+            await deleteDoc(doc(db, "tournaments", d.id));
+            debug("Deleted:", d.id);
+          }
+        } catch (err) {
+          alert("Delete all failed: " + (err.message || err));
+        }
+      };
+    });
+
+    function renderSnapshot(snapshot) {
+      if (!snapshot || snapshot.size === 0) {
+        tableBody.innerHTML = "<tr><td colspan='9'>You haven't submitted any tournaments yet.</td></tr>";
+        return;
+      }
+
+      tableBody.innerHTML = "";
+      snapshot.forEach(docSnap => {
+        const t = { id: docSnap.id, ...docSnap.data() };
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(t.name)}</td>
+          <td>${escapeHtml(t.province)}</td>
+          <td>${escapeHtml(t.region)}</td>
+          <td>${escapeHtml(t.city)}</td>
+          <td>${escapeHtml(t.date)}</td>
+          <td>${escapeHtml(t.level)}</td>
+          <td>${formatRegistration(t.registration)}</td>
+          <td>${escapeHtml(t.address)}</td>
+          <td><button class="delete-btn" data-id="${t.id}">Delete</button></td>
+        `;
+        tableBody.appendChild(tr);
+      });
+
+      // attach delete handlers
+      document.querySelectorAll(".delete-btn").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+          const id = e.currentTarget.dataset.id;
+          if (!confirm("Delete this tournament?")) return;
+          try {
+            await deleteDoc(doc(db, "tournaments", id));
+          } catch (err) {
+            alert("Delete failed: " + (err.message || err));
+          }
+        });
+      });
+    }
+
+    // fallback: used when primary query fails or returns no docs
+    async function fallbackCheck(user) {
+      try {
+        debug("Running fallback checks...");
+        // 1) try equality-only query (no orderBy)
+        const eqQ = query(collection(db, "tournaments"), where("createdBy", "==", user.uid));
+        const eqSnap = await getDocs(eqQ);
+        debug("Equality-only query size:", eqSnap.size);
+
+        if (eqSnap.size > 0) {
+          // render these results
+          renderSnapshot(eqSnap);
+          return;
+        }
+
+        // 2) try matching by email (in case createdBy was stored as email by mistake)
+        const byEmailQ = query(collection(db, "tournaments"), where("createdBy", "==", user.email));
+        const byEmailSnap = await getDocs(byEmailQ);
+        debug("By-email query size:", byEmailSnap.size);
+        if (byEmailSnap.size > 0) {
+          renderSnapshot(byEmailSnap);
+          debug("NOTE: Found tournaments where createdBy == your email. That means your submit code stored email instead of uid.");
+          return;
+        }
+
+        // 3) lastly, fetch ALL docs and show those where createdBy is missing or unexpected
+        const allSnap = await getDocs(collection(db, "tournaments"));
+        const matches = allSnap.docs.filter(d => {
+          const data = d.data();
+          // best-effort: detect common mistakes
+          return data.organizerName === user.email || (data.createdBy && String(data.createdBy).includes(user.uid.slice(0,6)));
+        });
+        debug("Client-side scan matches count:", matches.length);
+        if (matches.length > 0) {
+          // create a "virtual" snapshot-like object for rendering
+          const pseudo = { size: matches.length, forEach: (fn) => matches.forEach(d => fn({ id: d.id, data: () => d.data })) };
+          // NOTE: matches are not full Firestore docs; instead render a readable list in debug
+          debug("Sample matched docs (id, raw):", matches.map(d => ({ id: d.id, raw: d.data() })));
+        }
+
+        // final message if nothing found
+        tableBody.innerHTML = "<tr><td colspan='9'>No tournaments found for this account. See debug panel below for details.</td></tr>";
+
+      } catch (err) {
+        debug("Fallback check error:", err && err.message ? err.message : err);
+        tableBody.innerHTML = "<tr><td colspan='9'>Error checking tournaments (see debug panel)</td></tr>";
+      }
     }
   </script>
 </body>
