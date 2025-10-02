@@ -1,34 +1,110 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Your Account</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Your Account</h1>
-  <p id="userEmail"></p>
+  <header class="site-header">
+    <h1>Your Account</h1>
+    <a href="index.html" class="submit-btn">Back to Home</a>
+  </header>
 
-  <h2>Your Events</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Date</th>
-        <th>Location</th>
-        <th>Province</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody id="userEventsTable"></tbody>
-  </table>
+  <div class="content">
+    <main>
+      <h2>Your Submitted Tournaments</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th><th>Province</th><th>Region</th><th>City</th>
+            <th>Date</th><th>Level</th><th>Registration</th><th>Address</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="account-tournaments-body">
+          <tr><td colspan="9">Loading your tournaments...</td></tr>
+        </tbody>
+      </table>
+    </main>
+  </div>
 
-  <button id="deleteAllBtn" style="margin-top:20px; display:none;">Delete All Events</button>
-  
-  <br><br>
-  <a href="index.html">Back to Home</a>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+    import { 
+      getFirestore, collection, query, where, orderBy, onSnapshot, deleteDoc, doc 
+    } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    import { firebaseConfig } from "./config.js";
 
-  <script type="module" src="account.js"></script>
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const tableBody = document.getElementById("account-tournaments-body");
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        tableBody.innerHTML = "<tr><td colspan='9'>You must be logged in to view your tournaments.</td></tr>";
+        return;
+      }
+
+      const q = query(
+        collection(db, "tournaments"),
+        where("createdBy", "==", user.uid),
+        orderBy("date", "asc")
+      );
+
+      onSnapshot(q, (snapshot) => {
+        if (snapshot.empty) {
+          tableBody.innerHTML = "<tr><td colspan='9'>You haven't submitted any tournaments yet.</td></tr>";
+          return;
+        }
+
+        tableBody.innerHTML = "";
+        snapshot.forEach(docSnap => {
+          const t = { id: docSnap.id, ...docSnap.data() };
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${escapeHtml(t.name||"")}</td>
+            <td>${escapeHtml(t.province||"")}</td>
+            <td>${escapeHtml(t.region||"")}</td>
+            <td>${escapeHtml(t.city||"")}</td>
+            <td>${escapeHtml(t.date||"")}</td>
+            <td>${escapeHtml(t.level||"")}</td>
+            <td>${formatRegistration(t.registration)}</td>
+            <td>${escapeHtml(t.address||"")}</td>
+            <td><button class="delete-btn" data-id="${t.id}">Delete</button></td>
+          `;
+          tableBody.appendChild(tr);
+        });
+
+        // delete button handlers
+        document.querySelectorAll(".delete-btn").forEach(btn => {
+          btn.addEventListener("click", async (e) => {
+            const id = e.currentTarget.dataset.id;
+            if (!confirm("Delete this tournament?")) return;
+            try {
+              await deleteDoc(doc(db, "tournaments", id));
+            } catch (err) {
+              alert("Delete failed: " + err.message);
+            }
+          });
+        });
+      });
+    });
+
+    function formatRegistration(val) {
+      if (!val) return "";
+      if (val.startsWith("http://") || val.startsWith("https://")) {
+        return `<a href="${escapeHtml(val)}" target="_blank" rel="noopener">${escapeHtml(val)}</a>`;
+      }
+      return escapeHtml(val);
+    }
+
+    function escapeHtml(s) {
+      return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    }
+  </script>
 </body>
 </html>
