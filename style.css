@@ -1,4 +1,3 @@
-/* General page styling */
 body {
   font-family: Arial, sans-serif;
   margin: 0;
@@ -7,7 +6,7 @@ body {
   color: #333;
 }
 
-header {
+.site-header {
   background: #333;
   color: #fff;
   padding: 1rem;
@@ -16,11 +15,11 @@ header {
   align-items: center;
 }
 
-header h1 {
+.site-header h1 {
   margin: 0;
 }
 
-nav .btn {
+.submit-btn {
   display: inline-block;
   background: orange;
   color: #fff;
@@ -31,26 +30,25 @@ nav .btn {
   font-weight: bold;
 }
 
-nav .btn:hover {
+.submit-btn:hover {
   background: darkorange;
 }
 
-/* Layout */
-.main-container {
+.content-container {
   display: flex;
-  min-height: calc(100vh - 80px); /* leave space for header */
+  min-height: calc(100vh - 80px);
 }
 
 /* Sidebar on the left */
 .sidebar {
-  background: #007BFF; /* blue */
+  background: #007BFF;
   color: #fff;
   width: 260px;
   padding: 1rem;
   box-sizing: border-box;
 }
 
-.sidebar h2 {
+.sidebar h3 {
   margin-top: 0;
 }
 
@@ -63,43 +61,31 @@ nav .btn:hover {
   font-size: 1rem;
 }
 
-/* Content (events list) */
-.content {
+.main-content {
   flex: 1;
-  padding: 1.5rem;
-}
-
-.content h2 {
-  margin-top: 0;
-}
-
-/* Tournament cards */
-.tournament-card {
-  background: #fff;
   padding: 1rem;
-  margin-bottom: 1rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  overflow-x: auto;
 }
 
-.tournament-card h3 {
-  margin-top: 0;
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
 }
 
-.tournament-card p {
-  margin: 0.2rem 0;
+th, td {
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  text-align: left;
 }
 
 .delete-btn {
-  display: inline-block;
   background: red;
   color: #fff;
   padding: 0.4rem 0.8rem;
-  margin-top: 0.5rem;
   border-radius: 4px;
-  text-decoration: none;
+  border: none;
   cursor: pointer;
-  font-size: 0.9rem;
 }
 
 .delete-btn:hover {
