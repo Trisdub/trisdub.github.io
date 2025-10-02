@@ -35,16 +35,17 @@ nav .btn:hover {
   background: darkorange;
 }
 
-/* Layout with sidebar */
-.layout {
+/* Layout */
+.main-container {
   display: flex;
-  min-height: calc(100vh - 80px); /* account for header height */
+  min-height: calc(100vh - 80px); /* leave space for header */
 }
 
+/* Sidebar on the left */
 .sidebar {
-  background: #007BFF; /* Blue background */
+  background: #007BFF; /* blue */
   color: #fff;
-  width: 250px;
+  width: 260px;
   padding: 1rem;
   box-sizing: border-box;
 }
@@ -62,7 +63,7 @@ nav .btn:hover {
   font-size: 1rem;
 }
 
-/* Main content area */
+/* Content (events list) */
 .content {
   flex: 1;
   padding: 1.5rem;
