@@ -9,7 +9,7 @@
 <body>
   <header class="site-header">
     <h1>Volleyball Tournaments</h1>
-    <div style="display:flex; gap:10px; align-items:center;">
+    <div class="header-buttons">
       <a href="auth.html" class="submit-btn" id="auth-link">Log In / Sign Up</a>
       <a href="submit.html" class="submit-btn" id="submit-link" style="display:none;">Submit Event</a>
       <a href="account.html" class="submit-btn" id="account-link" style="display:none;">Your Account</a>
@@ -53,9 +53,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-    import {
-      getFirestore, collection, query, orderBy, onSnapshot, deleteDoc, doc
-    } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    import { getFirestore, collection, query, orderBy, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
     import { firebaseConfig } from "./config.js";
 
     const app = initializeApp(firebaseConfig);
@@ -94,9 +92,7 @@
       renderList();
     });
 
-    logoutBtn.addEventListener("click", async () => {
-      await signOut(auth);
-    });
+    logoutBtn.addEventListener("click", async () => { await signOut(auth); });
 
     const q = query(collection(db, "tournaments"), orderBy("date", "asc"));
     onSnapshot(q, (snapshot) => {
@@ -110,7 +106,6 @@
     function renderList() {
       const today = todayISO();
       let visible = allTournaments.filter(t => t.date >= today);
-
       const selProv = provinceFilter.value;
       if (selProv) visible = visible.filter(t => t.province === selProv);
 
@@ -140,11 +135,8 @@
         btn.addEventListener("click", async (e) => {
           const id = e.currentTarget.dataset.id;
           if (!confirm("Delete this tournament?")) return;
-          try {
-            await deleteDoc(doc(db, "tournaments", id));
-          } catch (err) {
-            alert("Delete failed: " + err.message);
-          }
+          try { await deleteDoc(doc(db, "tournaments", id)); } 
+          catch (err) { alert("Delete failed: " + err.message); }
         });
       });
     }
