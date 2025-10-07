@@ -3,35 +3,63 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Your Account - Volleyball Tournaments</title>
+  <title>Your Account</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="site-header">
     <h1>Your Account</h1>
-    <a href="index.html" class="submit-btn">← Back to Home</a>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <a href="index.html" class="submit-btn">Back to Home</a>
+      <button id="logout-btn" class="submit-btn" style="display:none;">Sign Out</button>
+    </div>
   </header>
 
-  <main class="content">
-    <h2>Your Created Tournaments</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th><th>Province</th><th>Region</th><th>City</th>
-          <th>Date</th><th>Level</th><th>Registration</th><th>Address</th><th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="account-tournament-table-body">
-        <tr><td colspan="9">Loading your tournaments...</td></tr>
-      </tbody>
-    </table>
-  </main>
+  <div class="content-container">
+    <aside class="sidebar">
+      <h3>Your Account</h3>
+      <p id="user-info" style="color:rgba(255,255,255,0.95);"></p>
+      <div style="height:10px;"></div>
+      <p style="color:rgba(255,255,255,0.9); font-size:0.95rem;">Favorites are saved to your account and only visible to you.</p>
+    </aside>
+
+    <main class="main-content">
+      <section>
+        <h2>Your Submitted Tournaments</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th><th>Date</th><th>City</th><th>Province</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="created-tournaments-body">
+            <tr><td colspan="5">Loading your tournaments...</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section style="margin-top:28px;">
+        <h2>Your Favorites</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th><th>Date</th><th>City</th><th>Province</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="favorites-body">
+            <tr><td colspan="5">Loading favorites...</td></tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-    import { 
-      getFirestore, collection, query, where, orderBy, onSnapshot, deleteDoc, doc 
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+    import {
+      getFirestore, collection, query, where, orderBy, onSnapshot,
+      getDoc, doc, deleteDoc, getDocs
     } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
     import { firebaseConfig } from "./config.js";
 
@@ -39,96 +67,127 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    const tableBody = document.getElementById("account-tournament-table-body");
+    const createdBody = document.getElementById("created-tournaments-body");
+    const favoritesBody = document.getElementById("favorites-body");
+    const userInfo = document.getElementById("user-info");
+    const logoutBtn = document.getElementById("logout-btn");
 
-    function todayISO() {
-      const d = new Date();
-      d.setHours(0,0,0,0);
-      return d.toISOString().slice(0,10);
+    let favListenerUnsub = null;
+
+    function escapeHtml(s) {
+      return String(s || "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
     }
 
-    let unsubscribe = null;
-
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        tableBody.innerHTML = "<tr><td colspan='9'>You must be logged in to view your tournaments.</td></tr>";
+    function renderCreated(list) {
+      createdBody.innerHTML = "";
+      if (!list.length) {
+        createdBody.innerHTML = "<tr><td colspan='5'>You haven't submitted any tournaments yet.</td></tr>";
         return;
       }
-
-      // unsubscribe old listener if any
-      if (unsubscribe) unsubscribe();
-
-      // query: only this user's tournaments, ordered by date
-      const q = query(
-        collection(db, "tournaments"),
-        where("createdBy", "==", user.uid),
-        orderBy("date", "asc")
-      );
-
-      unsubscribe = onSnapshot(q, (snapshot) => {
-        const today = todayISO();
-
-        const tournaments = snapshot.docs
-          .map(d => ({ id: d.id, ...d.data() }))
-          .filter(t => t.date && t.date >= today); // only upcoming
-
-        renderList(tournaments);
-      }, (err) => {
-        console.error("Snapshot error:", err);
-        tableBody.innerHTML = "<tr><td colspan='9'>Error loading tournaments.</td></tr>";
-      });
-    });
-
-    function renderList(list) {
-      tableBody.innerHTML = "";
-      if (list.length === 0) {
-        tableBody.innerHTML = "<tr><td colspan='9'>No upcoming tournaments</td></tr>";
-        return;
-      }
-
       list.forEach(t => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${escapeHtml(t.name||"")}</td>
-          <td>${escapeHtml(t.province||"")}</td>
-          <td>${escapeHtml(t.region||"")}</td>
-          <td>${escapeHtml(t.city||"")}</td>
-          <td>${escapeHtml(t.date||"")}</td>
-          <td>${escapeHtml(t.level||"")}</td>
-          <td>${formatRegistration(t.registration)}</td>
-          <td>${escapeHtml(t.address||"")}</td>
-          <td><button class="delete-btn" data-id="${t.id}">Delete Event</button></td>
+          <td>${escapeHtml(t.name)}</td>
+          <td>${escapeHtml(t.date)}</td>
+          <td>${escapeHtml(t.city)}</td>
+          <td>${escapeHtml(t.province)}</td>
+          <td><button class="delete-btn" data-id="${t.id}">Delete</button></td>
         `;
-        tableBody.appendChild(tr);
+        createdBody.appendChild(tr);
       });
 
-      document.querySelectorAll(".delete-btn").forEach(btn => {
+      createdBody.querySelectorAll(".delete-btn").forEach(btn => {
         btn.addEventListener("click", async (e) => {
           const id = e.currentTarget.dataset.id;
           if (!confirm("Delete this tournament?")) return;
           try {
             await deleteDoc(doc(db, "tournaments", id));
           } catch (err) {
-            alert("Delete failed: " + err.message);
+            alert("Delete failed: " + (err.message || err));
           }
         });
       });
     }
 
-    function formatRegistration(val) {
-      if (!val) return "";
-      if (val.startsWith("http://") || val.startsWith("https://")) {
-        return `<a href="${escapeHtml(val)}" target="_blank" rel="noopener">${escapeHtml(val)}</a>`;
+    function renderFavorites(list) {
+      favoritesBody.innerHTML = "";
+      if (!list.length) {
+        favoritesBody.innerHTML = "<tr><td colspan='5'>You have no favorites yet.</td></tr>";
+        return;
       }
-      return escapeHtml(val);
+      list.forEach(t => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(t.name)}</td>
+          <td>${escapeHtml(t.date)}</td>
+          <td>${escapeHtml(t.city)}</td>
+          <td>${escapeHtml(t.province)}</td>
+          <td><button class="unfav-btn" data-id="${t.id}">Remove</button></td>
+        `;
+        favoritesBody.appendChild(tr);
+      });
+
+      favoritesBody.querySelectorAll(".unfav-btn").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+          const tournamentId = e.currentTarget.dataset.id;
+          if (!confirm("Remove from favorites?")) return;
+          try {
+            const docId = `${auth.currentUser.uid}_${tournamentId}`;
+            await deleteDoc(doc(db, "favorites", docId));
+          } catch (err) {
+            alert("Remove failed: " + (err.message || err));
+          }
+        });
+      });
     }
 
-    function escapeHtml(s) {
-      return String(s)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;");
-    }
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        createdBody.innerHTML = "<tr><td colspan='5'>Sign in to view your account.</td></tr>";
+        favoritesBody.innerHTML = "<tr><td colspan='5'>Sign in to view your favorites.</td></tr>";
+        logoutBtn.style.display = "none";
+        return;
+      }
+      logoutBtn.style.display = "inline-block";
+      userInfo.textContent = `Signed in as ${user.email} (UID: ${user.uid})`;
+      logoutBtn.onclick = async () => { await signOut(auth); };
+
+      // load created tournaments (ordered by date)
+      const createdQ = query(collection(db, "tournaments"), where("createdBy","==", user.uid), orderBy("date","asc"));
+      onSnapshot(createdQ, (snap) => {
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderCreated(list);
+      }, (err) => {
+        createdBody.innerHTML = "<tr><td colspan='5'>Error loading created tournaments.</td></tr>";
+      });
+
+      // listen to favorites (user's favorites)
+      if (favListenerUnsub) favListenerUnsub();
+      const favQ = query(collection(db, "favorites"), where("userId","==", user.uid));
+      favListenerUnsub = onSnapshot(favQ, async (favSnap) => {
+        if (favSnap.empty) {
+          renderFavorites([]);
+          return;
+        }
+        // fetch each tournament doc for the favorites
+        const favDocs = [];
+        for (const fd of favSnap.docs) {
+          const favData = fd.data();
+          if (!favData || !favData.tournamentId) continue;
+          try {
+            const tdoc = await getDoc(doc(db,"tournaments", favData.tournamentId));
+            if (tdoc.exists()) favDocs.push({ id: tdoc.id, ...tdoc.data() });
+          } catch (err) {
+            console.error("Error fetching favorite tournament doc:", err);
+          }
+        }
+        // sort by date ascending
+        favDocs.sort((a,b) => (a.date||"") > (b.date||"") ? 1 : -1);
+        renderFavorites(favDocs);
+      }, (err) => {
+        favoritesBody.innerHTML = "<tr><td colspan='5'>Error loading favorites.</td></tr>";
+      });
+    });
   </script>
 </body>
 </html>
