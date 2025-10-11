@@ -20,7 +20,9 @@
       <h3>Your Account</h3>
       <p id="user-info" style="color:rgba(255,255,255,0.95);"></p>
       <div style="height:10px;"></div>
-      <p style="color:rgba(255,255,255,0.9); font-size:0.95rem;">Favorites are saved to your account and only visible to you.</p>
+      <p style="color:rgba(255,255,255,0.9); font-size:0.95rem;">
+        Favorites are saved to your account and only visible to you.
+      </p>
     </aside>
 
     <main class="main-content">
@@ -59,7 +61,7 @@
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
     import {
       getFirestore, collection, query, where, orderBy, onSnapshot,
-      getDoc, doc, deleteDoc, getDocs
+      getDoc, doc, deleteDoc
     } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
     import { firebaseConfig } from "./config.js";
 
@@ -149,7 +151,7 @@
         return;
       }
       logoutBtn.style.display = "inline-block";
-      userInfo.textContent = `Signed in as ${user.email} (UID: ${user.uid})`;
+      userInfo.textContent = `Signed in as ${user.email}`;
       logoutBtn.onclick = async () => { await signOut(auth); };
 
       // load created tournaments (ordered by date)
@@ -157,7 +159,7 @@
       onSnapshot(createdQ, (snap) => {
         const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         renderCreated(list);
-      }, (err) => {
+      }, () => {
         createdBody.innerHTML = "<tr><td colspan='5'>Error loading created tournaments.</td></tr>";
       });
 
@@ -169,7 +171,6 @@
           renderFavorites([]);
           return;
         }
-        // fetch each tournament doc for the favorites
         const favDocs = [];
         for (const fd of favSnap.docs) {
           const favData = fd.data();
@@ -181,10 +182,9 @@
             console.error("Error fetching favorite tournament doc:", err);
           }
         }
-        // sort by date ascending
         favDocs.sort((a,b) => (a.date||"") > (b.date||"") ? 1 : -1);
         renderFavorites(favDocs);
-      }, (err) => {
+      }, () => {
         favoritesBody.innerHTML = "<tr><td colspan='5'>Error loading favorites.</td></tr>";
       });
     });
