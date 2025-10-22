@@ -1,95 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Volleyball Tournaments</title>
-  <link rel="stylesheet" href="style.css" />
 
-  <!-- ✅ Leaflet (OpenStreetMap) -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet/dist/leaflet.css"
-  />
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- Header -->
   <header class="site-header">
     <h1>Volleyball Tournaments</h1>
-    <div style="display:flex; gap:10px; align-items:center;">
-      <a href="auth.html" class="submit-btn" id="auth-link">Log In / Sign Up</a>
-      <a href="submit.html" class="submit-btn" id="submit-link" style="display:none;">Submit Event</a>
-      <a href="account.html" class="submit-btn" id="account-link" style="display:none;">Your Account</a>
-      <button id="logout-btn" class="submit-btn" style="display:none;">Sign Out</button>
+    <div class="header-buttons">
+      <a href="submit.html" class="submit-btn">Submit Event</a>
+      <a href="account.html" class="submit-btn">Your Account</a>
     </div>
   </header>
 
   <div class="content-container">
-    <!-- Main content -->
+    <!-- Sidebar (Filters) -->
+    <aside class="sidebar">
+      <h3>Filter by Province</h3>
+      <select id="provinceFilter">
+        <option value="">All Provinces</option>
+        <option value="Ontario">Ontario</option>
+        <option value="Quebec">Quebec</option>
+        <option value="British Columbia">British Columbia</option>
+        <option value="Alberta">Alberta</option>
+        <option value="Manitoba">Manitoba</option>
+        <option value="Saskatchewan">Saskatchewan</option>
+        <option value="Nova Scotia">Nova Scotia</option>
+        <option value="New Brunswick">New Brunswick</option>
+        <option value="Newfoundland and Labrador">Newfoundland and Labrador</option>
+        <option value="Prince Edward Island">Prince Edward Island</option>
+      </select>
+
+      <h3>Filter by Date</h3>
+      <input type="date" id="dateFilter">
+
+      <h3>Filter by Level</h3>
+      <select id="levelFilter">
+        <option value="">All Levels</option>
+        <option value="Recreational">Recreational</option>
+        <option value="Competitive">Competitive</option>
+        <option value="Open Gym">Open Gym</option>
+      </select>
+    </aside>
+
+    <!-- Main Content -->
     <main class="main-content">
-      <div class="filters-row">
-        <div class="inline-filter">
-          <label for="level-filter">Level</label>
-          <select id="level-filter">
-            <option value="">All Levels</option>
-            <option>Open Gym</option>
-            <option>Competitive</option>
-            <option>Recreational</option>
-          </select>
-        </div>
-
-        <div class="inline-filter">
-          <label for="date-from">From</label>
-          <input id="date-from" type="date" />
-        </div>
-
-        <div class="inline-filter">
-          <label for="date-to">To</label>
-          <input id="date-to" type="date" />
-        </div>
-      </div>
-
+      <h2>Upcoming Events</h2>
+      <div class="filters-row"></div>
       <table>
         <thead>
           <tr>
-            <th>Name</th><th>Province</th><th>Region</th><th>City</th>
-            <th>Date</th><th>Level</th><th>Registration</th><th>Address</th><th>Actions</th>
+            <th>Name</th>
+            <th>Date</th>
+            <th>Province</th>
+            <th>Level</th>
+            <th>Favorite</th>
           </tr>
         </thead>
-        <tbody id="tournament-table-body">
-          <tr><td colspan="9">Loading tournaments...</td></tr>
-        </tbody>
+        <tbody id="eventList"></tbody>
       </table>
+      <p id="error-message" class="empty-message" style="display:none;">No events found.</p>
     </main>
-
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <h3>Filter by Province</h3>
-      <select id="province-filter">
-        <option value="">All Provinces</option>
-        <option>Alberta</option>
-        <option>British Columbia</option>
-        <option>Manitoba</option>
-        <option>New Brunswick</option>
-        <option>Newfoundland and Labrador</option>
-        <option>Nova Scotia</option>
-        <option>Ontario</option>
-        <option>Prince Edward Island</option>
-        <option>Quebec</option>
-        <option>Saskatchewan</option>
-      </select>
-
-      <div style="height:20px;"></div>
-      <p style="opacity:.9; font-size:.95rem;">Signed-in favorites will sync to your profile.</p>
-    </aside>
   </div>
 
-  <!-- ✅ Map container -->
-  <div id="map-container">
-    <div id="map"></div>
-    <button id="toggle-map">🗺️</button>
-  </div>
+  <!-- Map toggle and container -->
+  <button id="mapToggleBtn">🗺️ Toggle Map</button>
+  <div id="map" class="hidden"></div>
 
+  <!-- Firebase and App Logic -->
   <script type="module" src="script.js"></script>
 </body>
 </html>
