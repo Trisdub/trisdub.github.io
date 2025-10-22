@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Volleyball Tournaments</title>
   <link rel="stylesheet" href="style.css" />
+
+  <!-- ✅ Leaflet (OpenStreetMap) -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet/dist/leaflet.css"
+  />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </head>
 <body>
   <header class="site-header">
@@ -18,10 +25,9 @@
   </header>
 
   <div class="content-container">
-    <!-- Left: main content (table) -->
+    <!-- Main content -->
     <main class="main-content">
       <div class="filters-row">
-        <!-- Province filter moved to sidebar but replicated here for accessibility on small screens -->
         <div class="inline-filter">
           <label for="level-filter">Level</label>
           <select id="level-filter">
@@ -56,7 +62,7 @@
       </table>
     </main>
 
-    <!-- LEFT sidebar (full-height) -->
+    <!-- Sidebar -->
     <aside class="sidebar">
       <h3>Filter by Province</h3>
       <select id="province-filter">
@@ -78,235 +84,12 @@
     </aside>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-    import {
-      getAuth,
-      onAuthStateChanged,
-      signOut
-    } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-    import {
-      getFirestore,
-      collection,
-      query,
-      orderBy,
-      onSnapshot,
-      deleteDoc,
-      doc,
-      setDoc,
-      getDocs,
-      where,
-      serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-    import { firebaseConfig } from "./config.js";
+  <!-- ✅ Map container -->
+  <div id="map-container">
+    <div id="map"></div>
+    <button id="toggle-map">🗺️</button>
+  </div>
 
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    // UI elements
-    const submitLink = document.getElementById("submit-link");
-    const accountLink = document.getElementById("account-link");
-    const logoutBtn = document.getElementById("logout-btn");
-    const authLink = document.getElementById("auth-link");
-    const provinceFilter = document.getElementById("province-filter");
-    const levelFilter = document.getElementById("level-filter");
-    const dateFromEl = document.getElementById("date-from");
-    const dateToEl = document.getElementById("date-to");
-    const tableBody = document.getElementById("tournament-table-body");
-
-    let currentUser = null;
-    let allTournaments = []; // cached snapshot data
-    let favoriteIds = new Set(); // set of tournament ids favorited by current user
-    let favoritesUnsub = null;
-
-    function todayISO() {
-      const d = new Date();
-      d.setHours(0,0,0,0);
-      return d.toISOString().slice(0,10);
-    }
-
-    // Auth UI handling
-    onAuthStateChanged(auth, (user) => {
-      currentUser = user;
-      if (user) {
-        submitLink.style.display = "inline-block";
-        accountLink.style.display = "inline-block";
-        logoutBtn.style.display = "inline-block";
-        authLink.style.display = "none";
-        startFavoritesListener(user.uid);
-      } else {
-        submitLink.style.display = "none";
-        accountLink.style.display = "none";
-        logoutBtn.style.display = "none";
-        authLink.style.display = "inline-block";
-        stopFavoritesListener();
-        favoriteIds.clear();
-      }
-      renderList(); // re-render to update delete/fav buttons
-    });
-
-    logoutBtn.addEventListener("click", async () => {
-      await signOut(auth);
-    });
-
-    // Real-time subscription to tournaments (ordered by date)
-    const q = query(collection(db, "tournaments"), orderBy("date", "asc"));
-    onSnapshot(q, (snapshot) => {
-      allTournaments = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderList();
-    }, (err) => {
-      console.error("Snapshot error:", err);
-      tableBody.innerHTML = "<tr><td colspan='9'>Error loading tournaments.</td></tr>";
-    });
-
-    // favorites listener (fires only when user is signed in)
-    function startFavoritesListener(uid) {
-      stopFavoritesListener();
-      // favorites stored in collection 'favorites' with doc id `${uid}_${tournamentId}`
-      const favQuery = query(collection(db, "favorites"), where("userId", "==", uid));
-      // realtime listen for user's favorites
-      favoritesUnsub = onSnapshot(favQuery, (snap) => {
-        favoriteIds.clear();
-        snap.forEach(d => {
-          const data = d.data();
-          if (data && data.tournamentId) favoriteIds.add(data.tournamentId);
-        });
-        renderList(); // update hearts
-      }, (err) => {
-        console.error("Favorites snapshot error:", err);
-      });
-    }
-
-    function stopFavoritesListener() {
-      if (typeof favoritesUnsub === "function") {
-        favoritesUnsub();
-        favoritesUnsub = null;
-      }
-    }
-
-    // toggle favorite (create/delete document in favorites collection)
-    async function toggleFavorite(tournamentId, isFav) {
-      if (!currentUser) {
-        alert("Sign in to favorite tournaments.");
-        return;
-      }
-      const docId = `${currentUser.uid}_${tournamentId}`;
-      const ref = doc(db, "favorites", docId);
-      try {
-        if (!isFav) {
-          // add
-          await setDoc(ref, {
-            userId: currentUser.uid,
-            tournamentId,
-            createdAt: serverTimestamp()
-          });
-        } else {
-          // remove
-          await deleteDoc(ref);
-        }
-      } catch (err) {
-        console.error("Favorite toggle failed:", err);
-        alert("Favorite action failed: " + (err.message || err));
-      }
-    }
-
-    // Render the table using cached allTournaments and filters
-    function renderList() {
-      const today = todayISO();
-      let visible = allTournaments.filter(t => {
-        if (!t.date) return false;
-        // show only upcoming by default
-        if (t.date < today) return false;
-        return true;
-      });
-
-      // apply province filter
-      const prov = (provinceFilter.value || "").trim();
-      if (prov) visible = visible.filter(t => t.province === prov);
-
-      // apply level filter
-      const level = (levelFilter.value || "").trim();
-      if (level) visible = visible.filter(t => t.level === level);
-
-      // apply date range filters if provided
-      const from = dateFromEl.value;
-      const to = dateToEl.value;
-      if (from) visible = visible.filter(t => t.date >= from);
-      if (to) visible = visible.filter(t => t.date <= to);
-
-      tableBody.innerHTML = "";
-      if (visible.length === 0) {
-        tableBody.innerHTML = "<tr><td colspan='9' class='empty-message'>No upcoming tournaments</td></tr>";
-        return;
-      }
-
-      visible.forEach(t => {
-        const tr = document.createElement("tr");
-        // favorite heart (visible for signed-in users)
-        const isFav = favoriteIds.has(t.id);
-        // actions cell: delete (if owner) + favorite heart
-        const deleteHtml = (currentUser && t.createdBy === currentUser.uid)
-                          ? `<button class="delete-btn" data-id="${t.id}">Delete Event</button>`
-                          : "";
-        const favHtml = `<button class="fav-btn ${isFav ? 'active' : ''}" data-id="${t.id}" aria-label="Toggle favorite">${isFav ? '♥' : '♡'}</button>`;
-
-        tr.innerHTML = `
-          <td>${escapeHtml(t.name||"")}</td>
-          <td>${escapeHtml(t.province||"")}</td>
-          <td>${escapeHtml(t.region||"")}</td>
-          <td>${escapeHtml(t.city||"")}</td>
-          <td>${escapeHtml(t.date||"")}</td>
-          <td>${escapeHtml(t.level||"")}</td>
-          <td>${formatRegistration(t.registration)}</td>
-          <td>${escapeHtml(t.address||"")}</td>
-          <td class="actions-cell">${deleteHtml} ${favHtml}</td>
-        `;
-        tableBody.appendChild(tr);
-      });
-
-      // attach delete handlers
-      document.querySelectorAll(".delete-btn").forEach(btn => {
-        btn.addEventListener("click", async (e) => {
-          const id = e.currentTarget.dataset.id;
-          if (!confirm("Delete this tournament?")) return;
-          try {
-            await deleteDoc(doc(db, "tournaments", id));
-          } catch (err) {
-            alert("Delete failed: " + err.message);
-          }
-        });
-      });
-
-      // attach favorite handlers
-      document.querySelectorAll(".fav-btn").forEach(btn => {
-        btn.addEventListener("click", async (e) => {
-          const id = e.currentTarget.dataset.id;
-          const currentlyFav = favoriteIds.has(id);
-          await toggleFavorite(id, currentlyFav);
-        });
-      });
-    }
-
-    // helper: format registration as link/email
-    function formatRegistration(val) {
-      if (!val) return "";
-      if (val.startsWith("http://") || val.startsWith("https://")) {
-        return `<a href="${escapeHtml(val)}" target="_blank" rel="noopener">${escapeHtml(val)}</a>`;
-      }
-      return escapeHtml(val);
-    }
-
-    function escapeHtml(s) {
-      return String(s || "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
-    }
-
-    // wire filters
-    provinceFilter.addEventListener("change", renderList);
-    levelFilter.addEventListener("change", renderList);
-    dateFromEl.addEventListener("change", renderList);
-    dateToEl.addEventListener("change", renderList);
-  </script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
