@@ -166,10 +166,56 @@ table tr:hover td { background:#f1fbff; }
 /* empty message */
 .empty-message { text-align:center; padding:20px; font-style:italic; color:#666; }
 
+/* Map + toggle button */
+#map {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  height: 250px;
+  width: 350px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+  z-index: 999;
+}
+
+#map.hidden {
+  transform: translateY(120%);
+  opacity: 0;
+}
+
+#mapToggleBtn {
+  position: fixed;
+  bottom: 280px;
+  right: 20px;
+  background-color: #0077cc;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+}
+#mapToggleBtn:hover {
+  background-color: #005fa3;
+  transform: scale(1.05);
+}
+
 /* small screens */
 @media (max-width: 900px) {
   .content-container { flex-direction:column; }
   .sidebar { width:100%; height:auto; position:relative; box-shadow:none; }
   .main-content { padding:16px; }
   .filters-row { gap:8px; }
+  #map {
+    width: 90%;
+    right: 5%;
+    height: 200px;
+  }
+  #mapToggleBtn {
+    bottom: 230px;
+    right: 5%;
+  }
 }
