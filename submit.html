@@ -5,6 +5,20 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Submit a Tournament</title>
   <link rel="stylesheet" href="submit-style.css" />
+
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-sA+4MnJzzabB0xkXlAqmtcPrCkZf1ckkWkPpCfeh7H0="
+    crossorigin=""
+  />
+  
+  <!-- Leaflet-Geosearch CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet-geosearch@3.1.0/dist/geosearch.css"
+  />
 </head>
 <body>
   <header class="site-header">
@@ -71,6 +85,71 @@
     </form>
   </main>
 
-  <script type="module" src="submit.js"></script>
+  <!-- Leaflet JS -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-o9N1j6kU5V5m+GjhlY0cBf0z7bN1QpXIsvC7rB8ntoY="
+    crossorigin=""
+  ></script>
+
+  <!-- Leaflet-Geosearch JS -->
+  <script src="https://unpkg.com/leaflet-geosearch@3.1.0/dist/bundle.min.js"></script>
+
+  <script type="module">
+    import { OpenStreetMapProvider } from 'https://unpkg.com/leaflet-geosearch@3.1.0/dist/bundle.min.js';
+
+    const provider = new OpenStreetMapProvider();
+
+    const addressInput = document.getElementById('address');
+
+    let timeout = null;
+
+    addressInput.addEventListener('input', async () => {
+      clearTimeout(timeout);
+
+      const query = addressInput.value;
+      if (!query) return;
+
+      // debounce so we don't flood the API
+      timeout = setTimeout(async () => {
+        const results = await provider.search({ query });
+
+        let dropdown = document.getElementById('autocomplete-list');
+        if (!dropdown) {
+          dropdown = document.createElement('div');
+          dropdown.id = 'autocomplete-list';
+          dropdown.style.border = '1px solid #ccc';
+          dropdown.style.position = 'absolute';
+          dropdown.style.background = '#fff';
+          dropdown.style.zIndex = '1000';
+          dropdown.style.width = addressInput.offsetWidth + 'px';
+          addressInput.parentNode.appendChild(dropdown);
+        }
+
+        dropdown.innerHTML = '';
+        results.slice(0, 5).forEach(result => {
+          const item = document.createElement('div');
+          item.style.padding = '5px';
+          item.style.cursor = 'pointer';
+          item.textContent = result.label;
+
+          item.addEventListener('click', () => {
+            addressInput.value = result.label;
+            dropdown.innerHTML = '';
+          });
+
+          dropdown.appendChild(item);
+        });
+      }, 300);
+    });
+
+    // Close dropdown if clicked outside
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('autocomplete-list');
+      if (dropdown && !addressInput.contains(e.target)) {
+        dropdown.innerHTML = '';
+      }
+    });
+  </script>
 </body>
 </html>
