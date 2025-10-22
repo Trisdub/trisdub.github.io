@@ -1,47 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Volleyball Tournaments</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volleyball Tournaments</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
 <body>
-  <header>
-    <h1>Volleyball Tournaments</h1>
-    <nav>
-      <button id="loginBtn">Login</button>
-      <button id="profileBtn" style="display:none;">Profile</button>
-      <button id="submitEventBtn">Submit Event</button>
-    </nav>
-  </header>
 
-  <main>
-    <section id="tournamentsSection">
-      <h2>Upcoming Tournaments</h2>
-      <ul id="tournamentList"></ul>
+    <header>
+        <h1>Volleyball Tournaments</h1>
+        <nav>
+            <a href="#tournaments">Tournaments</a>
+            <a href="#map-section">Map</a>
+            <a href="#submit-form">Submit Event</a>
+        </nav>
+    </header>
+
+    <section id="tournaments" class="tournament-list"></section>
+
+    <section id="map-section">
+        <div id="map"></div>
     </section>
 
-    <section id="mapSection">
-      <h2>Map</h2>
-      <div id="map" style="width: 100%; height: 400px;"></div>
+    <section id="submit-form">
+        <h2>Submit a New Tournament</h2>
+        <form id="tournamentForm">
+            <input type="text" id="name" placeholder="Tournament Name" required>
+            <input type="text" id="location" placeholder="Location" required>
+            <input type="date" id="date" required>
+            <textarea id="description" placeholder="Description"></textarea>
+            <button type="submit">Submit Tournament</button>
+        </form>
     </section>
 
-    <section id="submitEventSection" style="display:none;">
-      <h2>Submit New Tournament</h2>
-      <form id="submitEventForm">
-        <input type="text" id="eventName" placeholder="Tournament Name" required>
-        <input type="text" id="eventLocation" placeholder="Location" required>
-        <input type="date" id="eventDate" required>
-        <button type="submit">Submit</button>
-      </form>
-    </section>
-  </main>
+    <footer>
+        &copy; 2025 Volleyball Tournaments
+    </footer>
 
-  <script src="script.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
