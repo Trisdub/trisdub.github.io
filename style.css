@@ -1,103 +1,141 @@
-/* ============ GENERAL STYLING ============ */
+/* General layout */
 body {
   font-family: Arial, sans-serif;
   margin: 0;
-  background-color: #f9f9f9;
-  color: #222;
+  background: #f4f4f9;
+  color: #333;
 }
 
-header {
-  background-color: #0077b6;
+/* Header */
+.site-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:20px 30px;
+  background:#0077cc;
+  color:white;
+  box-shadow:0 3px 6px rgba(0,0,0,0.1);
+}
+.site-header h1 { margin:0; font-size:1.6em; }
+
+.submit-btn {
+  display:inline-block;
+  padding:8px 14px;
+  border-radius:6px;
+  font-weight:bold;
+  color:white;
+  background:#ff6600;
+  text-decoration:none;
+  border:none;
+  cursor:pointer;
+  margin-left:8px;
+  transition: all 0.2s ease;
+}
+.submit-btn:hover { background:#e65c00; transform: scale(1.02); }
+
+/* Layout */
+.content-container { display:flex; min-height:calc(100vh - 80px); }
+
+/* Sidebar */
+.sidebar {
+  width:260px;
+  background: linear-gradient(180deg, #4a90e2 0%, #357abd 100%);
+  color:white;
+  padding:30px 20px;
+  box-shadow:2px 0 8px rgba(0,0,0,0.05);
+  position:sticky;
+  top:0;
+  height:calc(100vh - 80px);
+  box-sizing:border-box;
+}
+.sidebar h3 { margin-top:0; margin-bottom:10px; font-size:1.05em; font-weight:700; }
+.sidebar select {
+  width:100%; padding:10px; border-radius:8px; border:none;
+  background:rgba(255,255,255,0.95); color:#0b2a4a;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,0.06);
+}
+
+/* Main content */
+.main-content { flex:1; padding:30px; background:#f4f4f9; }
+
+.filters-row {
+  display:flex; gap:12px; align-items:end; margin-bottom:18px; flex-wrap:wrap;
+}
+.inline-filter label {
+  display:block; font-size:0.85rem; color:#666; margin-bottom:6px;
+}
+.inline-filter select, .inline-filter input[type="date"] {
+  padding:8px 10px; border-radius:8px; border:1px solid #ddd; background:white; font-size:0.95rem;
+}
+
+/* Table */
+table {
+  width:100%;
+  border-collapse:collapse;
+  background:white;
+  box-shadow:0 6px 18px rgba(17, 24, 39, 0.06);
+  border-radius:10px;
+  overflow:hidden;
+}
+table thead th {
+  background:#0077cc; color:white; text-align:left; padding:12px 14px; font-weight:700;
+}
+table th, table td { padding:12px 14px; border-bottom:1px solid #f0f2f5; }
+table tr:nth-child(even) td { background:#fbfcfe; }
+table tr:hover td { background:#f1fbff; }
+.actions-cell { display:flex; gap:8px; align-items:center; }
+
+/* Buttons */
+.delete-btn {
+  padding:6px 10px; background:#ff4c4c; color:white;
+  border:none; border-radius:8px; cursor:pointer;
+}
+.fav-btn {
+  font-size:1.1rem; line-height:1; padding:6px 8px;
+  border-radius:8px; border:none; background:transparent;
+  color:#7a90a8; cursor:pointer;
+  transition:transform .12s ease, color .12s ease;
+}
+.fav-btn:hover { transform:scale(1.08); color:#ff6b81; }
+.fav-btn.active { color:#ff3b5f; text-shadow:0 1px 0 rgba(0,0,0,0.06); }
+
+.empty-message { text-align:center; padding:20px; font-style:italic; color:#666; }
+
+/* Map container */
+#map-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 350px;
+  height: 300px;
+  background: white;
+  border: 2px solid #0077cc;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+#map-container.collapsed {
+  height: 40px;
+  width: 140px;
+}
+#toggle-map {
+  width: 100%;
+  background: #0077cc;
   color: white;
-  padding: 15px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-header h1 {
-  margin: 0;
-}
-
-nav a {
-  color: white;
-  text-decoration: none;
-  margin-left: 15px;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
   font-weight: bold;
 }
-
-nav a:hover {
-  text-decoration: underline;
-}
-
-main {
-  padding: 20px;
-}
-
-/* ============ EVENT LIST ============ */
-.events-container {
-  display: grid;
-  gap: 15px;
-}
-
-.event-item {
-  background: white;
-  border-radius: 10px;
-  padding: 15px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-.event-item h3 {
-  margin: 0 0 10px 0;
-}
-
-/* ============ MAP CONTAINER ============ */
-#mapContainer {
-  position: fixed;
-  bottom: 15px;
-  right: 15px;
-  width: 350px;
-  height: 250px;
-  border-radius: 12px;
-  overflow: hidden;
-  transition: all 0.4s ease;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-  z-index: 1000;
-}
-
-#mapContainer.collapsed {
-  height: 40px;
-  width: 120px;
-}
-
 #map {
   width: 100%;
-  height: 100%;
+  height: calc(100% - 40px);
 }
 
-/* ============ MAP TOGGLE BUTTON ============ */
-#mapToggle {
-  position: absolute;
-  bottom: 8px;
-  left: 8px;
-  background-color: rgba(255,255,255,0.9);
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-  padding: 4px 8px;
-  z-index: 1100;
-  font-size: 14px;
-}
-
-#mapToggle:hover {
-  background-color: rgba(240,240,240,1);
-}
-
-/* ============ CUSTOM MAP PINS ============ */
-.custom-pin div {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: 2px solid white;
+/* Responsive */
+@media (max-width:900px) {
+  .content-container { flex-direction:column; }
+  .sidebar { width:100%; height:auto; position:relative; box-shadow:none; }
+  .main-content { padding:16px; }
 }
