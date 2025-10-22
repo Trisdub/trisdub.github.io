@@ -1,187 +1,142 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import {
-  getAuth, onAuthStateChanged, signOut
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {
-  getFirestore, collection, query, orderBy, onSnapshot,
-  deleteDoc, doc, setDoc, where, serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { firebaseConfig } from "./config.js";
+// Initialize Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyCfVProG4-iZ8z4r869oiBHB7OX4Fl3lMU",
+  authDomain: "volleyball-tourneys.firebaseapp.com",
+  projectId: "volleyball-tourneys",
+  storageBucket: "volleyball-tourneys.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+firebase.initializeApp(firebaseConfig);
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+const db = firebase.firestore();
+const auth = firebase.auth();
 
-const submitLink = document.getElementById("submit-link");
-const accountLink = document.getElementById("account-link");
-const logoutBtn = document.getElementById("logout-btn");
-const authLink = document.getElementById("auth-link");
-const provinceFilter = document.getElementById("province-filter");
-const levelFilter = document.getElementById("level-filter");
-const dateFromEl = document.getElementById("date-from");
-const dateToEl = document.getElementById("date-to");
-const tableBody = document.getElementById("tournament-table-body");
+let map;
+let markers = [];
+let tournaments = [];
 
-let currentUser = null;
-let allTournaments = [];
-let favoriteIds = new Set();
-let favoritesUnsub = null;
-let map, markers = [];
-
-function todayISO() {
-  const d = new Date();
-  d.setHours(0,0,0,0);
-  return d.toISOString().slice(0,10);
+// Initialize map
+function initMap() {
+  map = new google.maps.Map(document.getElementById('map'), {
+    center: { lat: 45.5017, lng: -73.5673 }, // default to Montreal
+    zoom: 5
+  });
+  loadTournaments();
 }
 
-onAuthStateChanged(auth, (user) => {
-  currentUser = user;
-  if (user) {
-    submitLink.style.display = "inline-block";
-    accountLink.style.display = "inline-block";
-    logoutBtn.style.display = "inline-block";
-    authLink.style.display = "none";
-    startFavoritesListener(user.uid);
-  } else {
-    submitLink.style.display = "none";
-    accountLink.style.display = "none";
-    logoutBtn.style.display = "none";
-    authLink.style.display = "inline-block";
-    stopFavoritesListener();
-    favoriteIds.clear();
-  }
-  renderList();
-});
-
-logoutBtn.addEventListener("click", async () => await signOut(auth));
-
-const q = query(collection(db, "tournaments"), orderBy("date", "asc"));
-onSnapshot(q, (snapshot) => {
-  allTournaments = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-  renderList();
-  updateMapPins();
-});
-
-function startFavoritesListener(uid) {
-  stopFavoritesListener();
-  const favQuery = query(collection(db, "favorites"), where("userId", "==", uid));
-  favoritesUnsub = onSnapshot(favQuery, (snap) => {
-    favoriteIds.clear();
-    snap.forEach(d => favoriteIds.add(d.data().tournamentId));
-    renderList();
+// Load tournaments from Firestore
+function loadTournaments() {
+  db.collection('tournaments').get().then((querySnapshot) => {
+    tournaments = [];
+    clearMarkers();
+    querySnapshot.forEach((doc) => {
+      const tournament = doc.data();
+      tournament.id = doc.id;
+      tournaments.push(tournament);
+      addMarker(tournament);
+    });
+    displayTournamentList(tournaments);
   });
 }
-function stopFavoritesListener() {
-  if (typeof favoritesUnsub === "function") favoritesUnsub();
-  favoritesUnsub = null;
+
+// Display tournaments in the list
+function displayTournamentList(list) {
+  const container = document.getElementById('tournament-list');
+  container.innerHTML = '';
+  list.forEach(t => {
+    const div = document.createElement('div');
+    div.className = 'tournament-item';
+    div.innerHTML = `<h3>${t.name}</h3>
+                     <p>${t.city}, ${t.date}</p>
+                     <button class='fav-btn' data-id='${t.id}'>${t.isFavorite ? 'Unfavorite' : 'Favorite'}</button>`;
+    container.appendChild(div);
+  });
+  addFavoriteListeners();
 }
 
-async function toggleFavorite(id, isFav) {
-  if (!currentUser) return alert("Sign in to favorite tournaments.");
-  const ref = doc(db, "favorites", `${currentUser.uid}_${id}`);
-  try {
-    if (!isFav)
-      await setDoc(ref, { userId: currentUser.uid, tournamentId: id, createdAt: serverTimestamp() });
-    else
-      await deleteDoc(ref);
-  } catch (err) {
-    alert("Favorite action failed: " + err.message);
-  }
+// Add markers to the map
+function addMarker(tournament) {
+  const marker = new google.maps.Marker({
+    position: { lat: tournament.lat, lng: tournament.lng },
+    map: map,
+    title: tournament.name
+  });
+  const infowindow = new google.maps.InfoWindow({
+    content: `<h3>${tournament.name}</h3><p>${tournament.city}, ${tournament.date}</p>`
+  });
+  marker.addListener('click', () => {
+    infowindow.open(map, marker);
+  });
+  markers.push(marker);
 }
 
-function escapeHtml(s) {
-  return String(s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
-}
-function formatRegistration(val) {
-  if (!val) return "";
-  if (val.startsWith("http")) return `<a href="${val}" target="_blank">${val}</a>`;
-  return val;
+function clearMarkers() {
+  markers.forEach(m => m.setMap(null));
+  markers = [];
 }
 
-function renderList() {
-  const today = todayISO();
-  let visible = allTournaments.filter(t => t.date >= today);
-  const prov = provinceFilter.value.trim();
-  const level = levelFilter.value.trim();
-  const from = dateFromEl.value;
-  const to = dateToEl.value;
-  if (prov) visible = visible.filter(t => t.province === prov);
-  if (level) visible = visible.filter(t => t.level === level);
-  if (from) visible = visible.filter(t => t.date >= from);
-  if (to) visible = visible.filter(t => t.date <= to);
+// Favorite/unfavorite buttons
+function addFavoriteListeners() {
+  const buttons = document.querySelectorAll('.fav-btn');
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      toggleFavorite(id, btn);
+    });
+  });
+}
 
-  tableBody.innerHTML = "";
-  if (!visible.length) {
-    tableBody.innerHTML = "<tr><td colspan='9' class='empty-message'>No upcoming tournaments</td></tr>";
+function toggleFavorite(tournamentId, btn) {
+  const user = auth.currentUser;
+  if (!user) {
+    alert('Please log in to favorite tournaments.');
     return;
   }
-
-  visible.forEach(t => {
-    const isFav = favoriteIds.has(t.id);
-    const tr = document.createElement("tr");
-    const deleteHtml = (currentUser && t.createdBy === currentUser.uid)
-      ? `<button class="delete-btn" data-id="${t.id}">Delete</button>` : "";
-    const favHtml = `<button class="fav-btn ${isFav ? 'active' : ''}" data-id="${t.id}">
-      ${isFav ? '♥' : '♡'}
-    </button>`;
-    tr.innerHTML = `
-      <td>${escapeHtml(t.name||"")}</td>
-      <td>${escapeHtml(t.province||"")}</td>
-      <td>${escapeHtml(t.region||"")}</td>
-      <td>${escapeHtml(t.city||"")}</td>
-      <td>${escapeHtml(t.date||"")}</td>
-      <td>${escapeHtml(t.level||"")}</td>
-      <td>${formatRegistration(t.registration)}</td>
-      <td>${escapeHtml(t.address||"")}</td>
-      <td class="actions-cell">${deleteHtml} ${favHtml}</td>
-    `;
-    tableBody.appendChild(tr);
-  });
-
-  document.querySelectorAll(".delete-btn").forEach(btn => btn.addEventListener("click", async e => {
-    if (!confirm("Delete this tournament?")) return;
-    await deleteDoc(doc(db, "tournaments", e.target.dataset.id));
-  }));
-  document.querySelectorAll(".fav-btn").forEach(btn => btn.addEventListener("click", async e => {
-    const id = e.target.dataset.id;
-    const fav = favoriteIds.has(id);
-    await toggleFavorite(id, fav);
-  }));
-}
-
-/* Map setup */
-function initMap() {
-  map = L.map('map').setView([56.1304, -106.3468], 4);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19, attribution: '&copy; OpenStreetMap'
-  }).addTo(map);
-}
-function updateMapPins() {
-  if (!map) return;
-  markers.forEach(m => map.removeLayer(m));
-  markers = [];
-  allTournaments.forEach(t => {
-    if (!t.lat || !t.lng) return;
-    let color = t.level === "Open Gym" ? "green" : t.level === "Competitive" ? "blue" : "orange";
-    const icon = L.divIcon({ className: 'custom-pin', html: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="${color}" viewBox="0 0 24 24"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.3 7 13 7 13s7-7.7 7-13c0-3.9-3.1-7-7-7z"/></svg>` });
-    const m = L.marker([t.lat, t.lng], { icon }).addTo(map)
-      .bindPopup(`<strong>${escapeHtml(t.name)}</strong><br>${escapeHtml(t.city||"")}`);
-    markers.push(m);
+  const favRef = db.collection('users').doc(user.uid);
+  favRef.get().then(doc => {
+    let favorites = doc.exists && doc.data().favorites ? doc.data().favorites : [];
+    if (favorites.includes(tournamentId)) {
+      favorites = favorites.filter(f => f !== tournamentId);
+      btn.innerText = 'Favorite';
+    } else {
+      favorites.push(tournamentId);
+      btn.innerText = 'Unfavorite';
+    }
+    favRef.set({ favorites }, { merge: true });
   });
 }
 
-/* Toggle map visibility */
-const mapContainer = document.getElementById("map-container");
-const toggleBtn = document.getElementById("toggle-map");
-toggleBtn.addEventListener("click", () => {
-  mapContainer.classList.toggle("collapsed");
-  toggleBtn.textContent = mapContainer.classList.contains("collapsed") ? "🗺 Show Map" : "Hide Map";
-  if (!map) initMap();
-  setTimeout(() => map.invalidateSize(), 300);
+// Authentication
+auth.onAuthStateChanged(user => {
+  if (user) {
+    document.getElementById('user-email').innerText = user.email;
+  } else {
+    document.getElementById('user-email').innerText = 'Not logged in';
+  }
 });
 
-/* Filters */
-provinceFilter.addEventListener("change", renderList);
-levelFilter.addEventListener("change", renderList);
-dateFromEl.addEventListener("change", renderList);
-dateToEl.addEventListener("change", renderList);
+function login(email, password) {
+  auth.signInWithEmailAndPassword(email, password).catch(err => alert(err.message));
+}
+
+function logout() {
+  auth.signOut();
+}
+
+function register(email, password) {
+  auth.createUserWithEmailAndPassword(email, password).catch(err => alert(err.message));
+}
+
+// Search/filter functionality
+function searchTournaments(keyword) {
+  const filtered = tournaments.filter(t => t.name.toLowerCase().includes(keyword.toLowerCase()));
+  displayTournamentList(filtered);
+}
+
+document.getElementById('search-input').addEventListener('input', e => {
+  searchTournaments(e.target.value);
+});
+
+// Initialize map when page loads
+window.onload = initMap;
