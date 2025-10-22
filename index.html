@@ -4,8 +4,50 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Volleyball Tournaments</title>
+  
+  <!-- Main Styles -->
   <link rel="stylesheet" href="style.css">
+  
+  <!-- Leaflet CSS for Map -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+  <style>
+    /* Map container in bottom right */
+    #map-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 300px;
+      height: 200px;
+      z-index: 1000;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+    }
+    #map-container.hidden {
+      width: 0;
+      height: 0;
+      opacity: 0;
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+    #toggle-map {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      padding: 0.3rem 0.6rem;
+      font-size: 0.8rem;
+      background-color: #ff7f50;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      z-index: 10;
+      color: white;
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -19,23 +61,91 @@
   </header>
 
   <main>
-    <section id="map-section">
-      <h2>Map of Tournaments</h2>
-      <div id="map"></div>
-    </section>
-
-    <section id="tournament-list">
-      <h2>Upcoming Tournaments</h2>
-      <div class="tournament-list"></div>
+    <section class="tournament-list" id="tournament-list">
+      <!-- Tournament cards will be added dynamically -->
     </section>
   </main>
 
-  <footer>
-    <p>&copy; 2025 Volleyball Tournaments</p>
-  </footer>
+  <!-- Map Container -->
+  <div id="map-container">
+    <div id="map"></div>
+    <button id="toggle-map">Toggle Map</button>
+  </div>
 
+  <!-- Scripts -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="config.js" type="module"></script>
-  <script src="script.js" type="module"></script>
+
+  <script>
+    // =========================
+    // Sample Tournament Data
+    // Replace this with Firebase fetch if needed
+    // =========================
+    const tournaments = [
+      { name: "Beach Open 2025", date: "2025-11-12", location: "Montreal", lat: 45.5017, lng: -73.5673 },
+      { name: "Winter Spike", date: "2025-12-05", location: "Toronto", lat: 43.6532, lng: -79.3832 },
+      { name: "Sunny Smash", date: "2026-01-20", location: "Vancouver", lat: 49.2827, lng: -123.1207 }
+    ];
+
+    // =========================
+    // Render Tournament Cards
+    // =========================
+    function displayTournaments() {
+      const list = document.getElementById("tournament-list");
+      list.innerHTML = "";
+
+      tournaments.forEach(t => {
+        const card = document.createElement("div");
+        card.className = "tournament-card";
+        card.innerHTML = `
+          <h3>${t.name}</h3>
+          <p><strong>Date:</strong> ${t.date}</p>
+          <p><strong>Location:</strong> ${t.location}</p>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    // =========================
+    // Initialize Map
+    // =========================
+    const map = L.map('map').setView([45.5017, -73.5673], 4); // Default Canada view
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let markers = [];
+    function renderMapMarkers() {
+      markers.forEach(m => map.removeLayer(m));
+      markers = [];
+
+      tournaments.forEach(t => {
+        if(t.lat && t.lng) {
+          const marker = L.marker([t.lat, t.lng])
+            .addTo(map)
+            .bindPopup(`<strong>${t.name}</strong><br>${t.location}<br>${t.date}`);
+          markers.push(marker);
+        }
+      });
+    }
+
+    // =========================
+    // Map toggle button
+    // =========================
+    const toggleBtn = document.getElementById("toggle-map");
+    const mapContainer = document.getElementById("map-container");
+
+    toggleBtn.addEventListener("click", () => {
+      mapContainer.classList.toggle("hidden");
+    });
+
+    // =========================
+    // Initial Render
+    // =========================
+    window.addEventListener("DOMContentLoaded", () => {
+      displayTournaments();
+      renderMapMarkers();
+    });
+  </script>
 </body>
 </html>
