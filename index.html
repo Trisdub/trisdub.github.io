@@ -1,31 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Volleyball Tournaments</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.5/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.5/dist/leaflet.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Volleyball Tournaments</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
 <body>
-    <header>
-        <h1>Volleyball Tournaments</h1>
-        <nav>
-            <a href="index.html">Home</a>
-            <a href="submit.html">Submit Event</a>
-            <a href="auth.html">Login / Signup</a>
-            <a href="account.html">My Account</a>
-        </nav>
-    </header>
+  <header>
+    <h1>Volleyball Tournaments</h1>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="submit.html">Submit Event</a>
+      <a href="auth.html">Login / Signup</a>
+      <a href="account.html">My Account</a>
+    </nav>
+  </header>
 
-    <main>
-        <section id="map" class="map"></section>
-        <section id="tournament-list">
-            <h2>Upcoming Tournaments</h2>
-            <ul id="tournaments"></ul>
-        </section>
-    </main>
+  <main>
+    <section id="map-section">
+      <h2>Map of Tournaments</h2>
+      <div id="map"></div>
+    </section>
 
-    <script type="module" src="script.js"></script>
+    <section id="tournament-list">
+      <h2>Upcoming Tournaments</h2>
+      <div class="tournament-list"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Volleyball Tournaments</p>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="config.js" type="module"></script>
+  <script src="script.js" type="module"></script>
 </body>
 </html>
