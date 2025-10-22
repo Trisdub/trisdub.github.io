@@ -1,142 +1,95 @@
-// Initialize Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyCfVProG4-iZ8z4r869oiBHB7OX4Fl3lMU",
-  authDomain: "volleyball-tourneys.firebaseapp.com",
-  projectId: "volleyball-tourneys",
-  storageBucket: "volleyball-tourneys.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
-firebase.initializeApp(firebaseConfig);
+// =========================
+// Tournament Data
+// =========================
+let tournaments = [
+    { name: "Summer Slam", location: "Montreal, QC", date: "2025-06-15", description: "A fun summer tournament for all levels.", lat: 45.5017, lng: -73.5673 },
+    { name: "Winter Spike", location: "Toronto, ON", date: "2025-12-05", description: "Indoor winter tournament.", lat: 43.6532, lng: -79.3832 }
+];
 
-const db = firebase.firestore();
-const auth = firebase.auth();
+// =========================
+// Render Tournament Cards
+// =========================
+function renderTournaments() {
+    const container = document.querySelector(".tournament-list");
+    container.innerHTML = "";
 
-let map;
+    tournaments.forEach(t => {
+        const card = document.createElement("div");
+        card.className = "tournament-card";
+        card.innerHTML = `
+            <h3>${t.name}</h3>
+            <p><strong>Location:</strong> ${t.location}</p>
+            <p><strong>Date:</strong> ${t.date}</p>
+            <p>${t.description}</p>
+        `;
+        container.appendChild(card);
+    });
+}
+
+// =========================
+// Initialize Map
+// =========================
+const map = L.map('map').setView([45.5017, -73.5673], 4);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
 let markers = [];
-let tournaments = [];
 
-// Initialize map
-function initMap() {
-  map = new google.maps.Map(document.getElementById('map'), {
-    center: { lat: 45.5017, lng: -73.5673 }, // default to Montreal
-    zoom: 5
-  });
-  loadTournaments();
-}
+function renderMapMarkers() {
+    // Remove existing markers
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
 
-// Load tournaments from Firestore
-function loadTournaments() {
-  db.collection('tournaments').get().then((querySnapshot) => {
-    tournaments = [];
-    clearMarkers();
-    querySnapshot.forEach((doc) => {
-      const tournament = doc.data();
-      tournament.id = doc.id;
-      tournaments.push(tournament);
-      addMarker(tournament);
+    tournaments.forEach(t => {
+        if(t.lat && t.lng){
+            const marker = L.marker([t.lat, t.lng])
+                .addTo(map)
+                .bindPopup(`<strong>${t.name}</strong><br>${t.location}<br>${t.date}`);
+            markers.push(marker);
+        }
     });
-    displayTournamentList(tournaments);
-  });
 }
 
-// Display tournaments in the list
-function displayTournamentList(list) {
-  const container = document.getElementById('tournament-list');
-  container.innerHTML = '';
-  list.forEach(t => {
-    const div = document.createElement('div');
-    div.className = 'tournament-item';
-    div.innerHTML = `<h3>${t.name}</h3>
-                     <p>${t.city}, ${t.date}</p>
-                     <button class='fav-btn' data-id='${t.id}'>${t.isFavorite ? 'Unfavorite' : 'Favorite'}</button>`;
-    container.appendChild(div);
-  });
-  addFavoriteListeners();
-}
-
-// Add markers to the map
-function addMarker(tournament) {
-  const marker = new google.maps.Marker({
-    position: { lat: tournament.lat, lng: tournament.lng },
-    map: map,
-    title: tournament.name
-  });
-  const infowindow = new google.maps.InfoWindow({
-    content: `<h3>${tournament.name}</h3><p>${tournament.city}, ${tournament.date}</p>`
-  });
-  marker.addListener('click', () => {
-    infowindow.open(map, marker);
-  });
-  markers.push(marker);
-}
-
-function clearMarkers() {
-  markers.forEach(m => m.setMap(null));
-  markers = [];
-}
-
-// Favorite/unfavorite buttons
-function addFavoriteListeners() {
-  const buttons = document.querySelectorAll('.fav-btn');
-  buttons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.getAttribute('data-id');
-      toggleFavorite(id, btn);
-    });
-  });
-}
-
-function toggleFavorite(tournamentId, btn) {
-  const user = auth.currentUser;
-  if (!user) {
-    alert('Please log in to favorite tournaments.');
-    return;
-  }
-  const favRef = db.collection('users').doc(user.uid);
-  favRef.get().then(doc => {
-    let favorites = doc.exists && doc.data().favorites ? doc.data().favorites : [];
-    if (favorites.includes(tournamentId)) {
-      favorites = favorites.filter(f => f !== tournamentId);
-      btn.innerText = 'Favorite';
+// =========================
+// Geocode using Nominatim
+// =========================
+async function geocodeLocation(location) {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}`);
+    const data = await response.json();
+    if(data && data.length > 0) {
+        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
     } else {
-      favorites.push(tournamentId);
-      btn.innerText = 'Unfavorite';
+        alert("Location not found. Using default coordinates.");
+        return { lat: 45.4215, lng: -75.6972 }; // default Ottawa
     }
-    favRef.set({ favorites }, { merge: true });
-  });
 }
 
-// Authentication
-auth.onAuthStateChanged(user => {
-  if (user) {
-    document.getElementById('user-email').innerText = user.email;
-  } else {
-    document.getElementById('user-email').innerText = 'Not logged in';
-  }
+// =========================
+// Form Submission
+// =========================
+document.getElementById("tournamentForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const name = document.getElementById("name").value;
+    const location = document.getElementById("location").value;
+    const date = document.getElementById("date").value;
+    const description = document.getElementById("description").value;
+
+    const coords = await geocodeLocation(location);
+
+    const newTournament = { name, location, date, description, lat: coords.lat, lng: coords.lng };
+    tournaments.push(newTournament);
+
+    renderTournaments();
+    renderMapMarkers();
+
+    this.reset();
 });
 
-function login(email, password) {
-  auth.signInWithEmailAndPassword(email, password).catch(err => alert(err.message));
-}
-
-function logout() {
-  auth.signOut();
-}
-
-function register(email, password) {
-  auth.createUserWithEmailAndPassword(email, password).catch(err => alert(err.message));
-}
-
-// Search/filter functionality
-function searchTournaments(keyword) {
-  const filtered = tournaments.filter(t => t.name.toLowerCase().includes(keyword.toLowerCase()));
-  displayTournamentList(filtered);
-}
-
-document.getElementById('search-input').addEventListener('input', e => {
-  searchTournaments(e.target.value);
-});
-
-// Initialize map when page loads
-window.onload = initMap;
+// =========================
+// Initial Render
+// =========================
+renderTournaments();
+renderMapMarkers();
