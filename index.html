@@ -4,78 +4,43 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Volleyball Tournaments</title>
-
-  <!-- Leaflet CSS & JS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
   <link rel="stylesheet" href="style.css" />
+
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
 </head>
 <body>
-  <!-- Header -->
-  <header class="site-header">
+  <header>
     <h1>Volleyball Tournaments</h1>
-    <div class="header-buttons">
-      <a href="submit.html" class="submit-btn">Submit Event</a>
-      <a href="account.html" class="submit-btn">Your Account</a>
-    </div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="submit.html">Submit Event</a>
+    </nav>
   </header>
 
-  <div class="content-container">
-    <!-- Sidebar (Filters) -->
-    <aside class="sidebar">
-      <h3>Filter by Province</h3>
-      <select id="provinceFilter">
-        <option value="">All Provinces</option>
-        <option value="Ontario">Ontario</option>
-        <option value="Quebec">Quebec</option>
-        <option value="British Columbia">British Columbia</option>
-        <option value="Alberta">Alberta</option>
-        <option value="Manitoba">Manitoba</option>
-        <option value="Saskatchewan">Saskatchewan</option>
-        <option value="Nova Scotia">Nova Scotia</option>
-        <option value="New Brunswick">New Brunswick</option>
-        <option value="Newfoundland and Labrador">Newfoundland and Labrador</option>
-        <option value="Prince Edward Island">Prince Edward Island</option>
-      </select>
+  <main>
+    <h2>Upcoming Events</h2>
+    <div id="eventsList" class="events-container">
+      <p>Loading events...</p>
+    </div>
+  </main>
 
-      <h3>Filter by Date</h3>
-      <input type="date" id="dateFilter">
-
-      <h3>Filter by Level</h3>
-      <select id="levelFilter">
-        <option value="">All Levels</option>
-        <option value="Recreational">Recreational</option>
-        <option value="Competitive">Competitive</option>
-        <option value="Open Gym">Open Gym</option>
-      </select>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="main-content">
-      <h2>Upcoming Events</h2>
-      <div class="filters-row"></div>
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Date</th>
-            <th>Province</th>
-            <th>Level</th>
-            <th>Favorite</th>
-          </tr>
-        </thead>
-        <tbody id="eventList"></tbody>
-      </table>
-      <p id="error-message" class="empty-message" style="display:none;">No events found.</p>
-    </main>
+  <!-- Retractable Map -->
+  <div id="mapContainer">
+    <div id="map"></div>
+    <button id="mapToggle">🗺️ Map</button>
   </div>
 
-  <!-- Map toggle and container -->
-  <button id="mapToggleBtn">🗺️ Toggle Map</button>
-  <div id="map" class="hidden"></div>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
-  <!-- Firebase and App Logic -->
-  <script type="module" src="script.js"></script>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script src="script.js"></script>
 </body>
 </html>
