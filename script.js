@@ -1,122 +1,124 @@
-// Firebase setup
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import {
-  getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import {
-  getAuth, onAuthStateChanged, signOut
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
-// Firebase config
+// ===============================
+// Firebase Configuration
+// ===============================
 const firebaseConfig = {
   apiKey: "AIzaSyCfVProG4-iZ8z4r869oiBHB7OX4Fl3lMU",
   authDomain: "volleyball-tourneys.firebaseapp.com",
   projectId: "volleyball-tourneys",
   storageBucket: "volleyball-tourneys.firebasestorage.app",
-  messagingSenderId: "970156221054",
-  appId: "1:970156221054:web:a4b8cfe7b71f3f99809d8f"
+  messagingSenderId: "901949085281",
+  appId: "1:901949085281:web:7237e4d5e812a9f1d0f234"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-// UI elements
-const eventList = document.getElementById("eventList");
-const provinceFilter = document.getElementById("provinceFilter");
-const dateFilter = document.getElementById("dateFilter");
-const levelFilter = document.getElementById("levelFilter");
-const mapToggleBtn = document.getElementById("mapToggleBtn");
-const mapContainer = document.getElementById("map");
+// ===============================
+// Event Display on Homepage
+// ===============================
+const eventsList = document.getElementById("eventsList");
 
-// Map setup (OpenStreetMap + Leaflet)
-let map, markers = [];
-function initMap() {
-  map = L.map('map').setView([56, -96], 4); // Centered on Canada
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
-}
-initMap();
-
-// Toggle map visibility
-if (mapToggleBtn) {
-  mapToggleBtn.addEventListener('click', () => {
-    mapContainer.classList.toggle('hidden');
-    setTimeout(() => map.invalidateSize(), 300);
-  });
-}
-
-// Load events
 async function loadEvents() {
-  eventList.innerHTML = "";
-  const querySnapshot = await getDocs(collection(db, "events"));
-  querySnapshot.forEach(docSnap => {
-    const data = docSnap.data();
-    displayEvent(docSnap.id, data);
+  const snapshot = await db.collection("events").orderBy("createdAt", "desc").get();
+  eventsList.innerHTML = "";
+
+  snapshot.forEach((doc) => {
+    const data = doc.data();
+
+    const eventItem = document.createElement("div");
+    eventItem.classList.add("event-item");
+    eventItem.innerHTML = `
+      <h3>${data.name}</h3>
+      <p><strong>Type:</strong> ${data.type}</p>
+      <p><strong>Date:</strong> ${data.date}</p>
+      <p><strong>Location:</strong> ${data.address}</p>
+    `;
+    eventsList.appendChild(eventItem);
+
+    // Add marker to map
+    if (data.latitude && data.longitude) {
+      addMarkerToMap(data);
+    }
   });
 }
 
-// Display single event
-function displayEvent(id, data) {
-  const row = document.createElement("tr");
-  row.innerHTML = `
-    <td>${data.name}</td>
-    <td>${data.date}</td>
-    <td>${data.province}</td>
-    <td>${data.level}</td>
-    <td><i class="heart-icon ${data.isFavorite ? 'fas' : 'far'} fa-heart" data-id="${id}" style="color:red; cursor:pointer;"></i></td>
-  `;
-  eventList.appendChild(row);
+// ===============================
+// Map Initialization (Leaflet)
+// ===============================
+let map = L.map('map', {
+  center: [45.5017, -73.5673], // Default center (Montreal)
+  zoom: 10,
+  scrollWheelZoom: false
+});
 
-  // Add marker on map
-  addMarker(data);
-}
+// OpenStreetMap tiles
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
 
-// Add map markers with color by event type
-function addMarker(event) {
-  if (!event.latitude || !event.longitude) return;
+// Marker colors by event type
+const eventTypeColors = {
+  "Open Gym": "blue",
+  "Competitive": "red",
+  "Recreational": "green"
+};
 
-  let color;
-  if (event.level === "Open Gym") color = "blue";
-  else if (event.level === "Competitive") color = "red";
-  else color = "green";
+// Function to add markers
+function addMarkerToMap(eventData) {
+  const color = eventTypeColors[eventData.type] || "gray";
 
-  const markerIcon = L.divIcon({
-    className: "custom-marker",
-    html: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24">
-             <circle cx="12" cy="12" r="8" fill="${color}" stroke="white" stroke-width="2"/>
-           </svg>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12]
+  const customIcon = L.divIcon({
+    className: "custom-pin",
+    html: `<div style="background-color:${color};"></div>`,
+    iconSize: [14, 14],
+    iconAnchor: [7, 7]
   });
 
-  const marker = L.marker([event.latitude, event.longitude], { icon: markerIcon }).addTo(map);
-  marker.bindPopup(`<b>${event.name}</b><br>${event.date}<br>${event.province}`);
-  markers.push(marker);
+  const marker = L.marker([eventData.latitude, eventData.longitude], { icon: customIcon }).addTo(map);
+  marker.bindPopup(`
+    <b>${eventData.name}</b><br>
+    ${eventData.type}<br>
+    ${eventData.address}<br>
+    ${eventData.date}
+  `);
 }
 
-// Favorite handler
-eventList.addEventListener("click", async (e) => {
-  if (e.target.classList.contains("fa-heart")) {
-    const heart = e.target;
-    const eventId = heart.dataset.id;
-    const eventRef = doc(db, "events", eventId);
-    const isFavorite = heart.classList.contains("far");
+// ===============================
+// Geocoding (Convert address → coordinates)
+// ===============================
+async function getCoordinatesFromAddress(address) {
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+    const data = await response.json();
 
-    await updateDoc(eventRef, { isFavorite: isFavorite });
-    heart.classList.toggle("far");
-    heart.classList.toggle("fas");
+    if (data.length > 0) {
+      return {
+        lat: parseFloat(data[0].lat),
+        lon: parseFloat(data[0].lon)
+      };
+    } else {
+      return null;
+    }
+  } catch (err) {
+    console.error("Error fetching coordinates:", err);
+    return null;
   }
+}
+
+// ===============================
+// Collapsible Map Control
+// ===============================
+const mapContainer = document.getElementById("mapContainer");
+const mapToggle = document.getElementById("mapToggle");
+
+mapToggle.addEventListener("click", () => {
+  mapContainer.classList.toggle("collapsed");
+  setTimeout(() => map.invalidateSize(), 400);
 });
 
-// Auth
-onAuthStateChanged(auth, (user) => {
-  if (user) loadEvents();
-  else window.location.href = "login.html";
-});
-
-document.getElementById("signOutBtn")?.addEventListener("click", () => signOut(auth));
+// ===============================
+// Load events on startup
+// ===============================
+if (eventsList) {
+  loadEvents();
+}
