@@ -31,12 +31,12 @@
   <main>
     <section id="tournament-list-section">
       <h2>Upcoming Tournaments</h2>
-      <ul id="tournament-list"></ul>
+      <div id="tournament-list" class="tournament-grid"></div>
     </section>
 
-    <!-- Retractable map container -->
-    <div id="map-container">
-      <button id="toggle-map">🗺️ Show/Hide Map</button>
+    <!-- Retractable map -->
+    <div id="map-container" class="visible">
+      <button id="toggle-map">🗺️ Hide Map</button>
       <div id="map"></div>
     </div>
   </main>
@@ -59,23 +59,28 @@
     const db = firebase.firestore();
   </script>
 
-  <!-- Script -->
+  <!-- Main Script -->
   <script>
     const listEl = document.getElementById('tournament-list');
     const mapContainer = document.getElementById('map-container');
     const toggleBtn = document.getElementById('toggle-map');
     const mapDiv = document.getElementById('map');
-    let mapInitialized = false;
     let map;
     let markers = [];
 
+    // Toggle map visibility
     toggleBtn.addEventListener('click', () => {
-      mapDiv.classList.toggle('visible');
-      if (!mapInitialized && mapDiv.classList.contains('visible')) {
-        initMap();
-        mapInitialized = true;
+      mapContainer.classList.toggle('visible');
+      if (mapContainer.classList.contains('visible')) {
+        toggleBtn.textContent = "🗺️ Hide Map";
+        map.invalidateSize();
+      } else {
+        toggleBtn.textContent = "🗺️ Show Map";
       }
     });
+
+    // Initialize map immediately on page load
+    initMap();
 
     function initMap() {
       map = L.map('map').setView([46.8, -71.2], 6);
@@ -87,6 +92,8 @@
     }
 
     function loadTournaments() {
+      const today = new Date();
+
       db.collection('tournaments').orderBy('date').get().then(snapshot => {
         listEl.innerHTML = '';
         markers.forEach(m => map.removeLayer(m));
@@ -94,16 +101,30 @@
 
         snapshot.forEach(doc => {
           const t = doc.data();
-          const li = document.createElement('li');
-          li.innerHTML = `
-            <h3>${t.name}</h3>
-            <p><strong>Date:</strong> ${t.date}</p>
-            <p><strong>City:</strong> ${t.city}</p>
-            <p><strong>Level:</strong> ${t.level}</p>
-            <p><strong>Organizer:</strong> ${t.organizerName} - ${t.organizerPhone}</p>
-          `;
-          listEl.appendChild(li);
+          const tournamentDate = new Date(t.date);
 
+          // Skip past tournaments
+          if (tournamentDate < today) return;
+
+          // Create list card
+          const div = document.createElement('div');
+          div.className = 'tournament-card';
+          div.innerHTML = `
+            <div class="tournament-info">
+              <h3>${t.name}</h3>
+              <div class="details-row">
+                <p><strong>Date:</strong> ${t.date}</p>
+                <p><strong>City:</strong> ${t.city}</p>
+                <p><strong>Level:</strong> ${t.level}</p>
+                <p><strong>Address:</strong> ${t.address}</p>
+                <p><strong>Registration:</strong> ${t.registration}</p>
+              </div>
+              <p class="org"><strong>Organizer:</strong> ${t.organizerName} - ${t.organizerPhone}</p>
+            </div>
+          `;
+          listEl.appendChild(div);
+
+          // Add map marker
           if (t.lat && t.lng) {
             const marker = L.marker([t.lat, t.lng]).addTo(map);
             marker.bindPopup(
@@ -114,23 +135,6 @@
         });
       });
     }
-
-    // Load list on page load (without map)
-    db.collection('tournaments').orderBy('date').get().then(snapshot => {
-      listEl.innerHTML = '';
-      snapshot.forEach(doc => {
-        const t = doc.data();
-        const li = document.createElement('li');
-        li.innerHTML = `
-          <h3>${t.name}</h3>
-          <p><strong>Date:</strong> ${t.date}</p>
-          <p><strong>City:</strong> ${t.city}</p>
-          <p><strong>Level:</strong> ${t.level}</p>
-          <p><strong>Organizer:</strong> ${t.organizerName} - ${t.organizerPhone}</p>
-        `;
-        listEl.appendChild(li);
-      });
-    });
   </script>
 </body>
 </html>
