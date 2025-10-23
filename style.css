@@ -17,21 +17,22 @@ header nav {
   margin-top: 0.5rem;
 }
 
-/* All buttons (orange) */
-.btn, .submit-btn {
-  background-color: orange; /* darker orange */
+header nav .btn,
+.submit-btn {
+  background-color: #e69500; /* darker orange */
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 8px;
   text-decoration: none;
-  margin: 0.3rem;
-  cursor: pointer;
+  margin: 0 0.3rem;
   transition: 0.2s;
-  display: inline-block;
+  border: none;
+  cursor: pointer;
 }
 
-.btn:hover, .submit-btn:hover {
-  background-color: #e69500; /* slightly darker on hover */
+header nav .btn:hover,
+.submit-btn:hover {
+  background-color: #d67a00;
 }
 
 /* Main content */
@@ -44,6 +45,22 @@ main {
 #tournament-list-section h2 {
   color: #1e73be;
   text-align: center;
+}
+
+/* Filters */
+.tournament-filters {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-start;
+  margin-bottom: 1rem;
+}
+
+.tournament-filters input,
+.tournament-filters select {
+  padding: 0.3rem 0.5rem;
+  font-size: 0.9rem;
+  border-radius: 5px;
+  border: 1px solid #ccc;
 }
 
 /* Tournament grid layout */
@@ -64,9 +81,11 @@ main {
   margin-top: 0;
   color: #1e73be;
   margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-/* Horizontal layout for details */
 .details-row {
   display: flex;
   flex-wrap: wrap;
@@ -86,7 +105,7 @@ main {
   color: #333;
 }
 
-/* Map container (bottom right, retractable) */
+/* Map container */
 #map-container {
   position: fixed;
   bottom: 15px;
@@ -104,7 +123,7 @@ main {
 
 #toggle-map {
   width: 100%;
-  background: orange;
+  background: #e69500;
   border: none;
   color: white;
   font-weight: bold;
@@ -114,7 +133,7 @@ main {
 }
 
 #toggle-map:hover {
-  background: #e69500;
+  background: #d67a00;
 }
 
 #map {
@@ -122,16 +141,33 @@ main {
   width: 100%;
 }
 
-/* Heart icons */
+/* Favorite heart */
 .favorite-heart {
-  font-size: 1.2rem;
-  color: #ccc; /* grey when empty */
   cursor: pointer;
+  font-size: 1.3rem;
+  color: grey;
+  margin-left: 0.5rem;
   user-select: none;
-  margin-left: 5px;
   transition: color 0.2s;
 }
 
 .favorite-heart.favorited {
-  color: red; /* solid red when favorited */
+  color: red;
+}
+
+/* Delete button subtle */
+.delete-btn {
+  background-color: transparent;
+  border: 1px solid #d9534f;
+  color: #d9534f;
+  border-radius: 5px;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: 0.2s;
+}
+
+.delete-btn:hover {
+  background-color: #d9534f;
+  color: white;
 }
