@@ -39,10 +39,10 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Firebase Config -->
+  <!-- Firebase + Main Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, query, where, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
     const firebaseConfig = {
@@ -68,12 +68,7 @@
 
     toggleBtn.addEventListener('click', () => {
       mapContainer.classList.toggle('visible');
-      if (mapContainer.classList.contains('visible')) {
-        toggleBtn.textContent = "🗺️ Hide Map";
-        map.invalidateSize();
-      } else {
-        toggleBtn.textContent = "🗺️ Show Map";
-      }
+      if (mapContainer.classList.contains('visible')) map.invalidateSize();
     });
 
     function initMap() {
@@ -85,18 +80,17 @@
       loadTournaments();
     }
 
-    onAuthStateChanged(auth, user => {
-      if (user) {
-        // load user favorites
-        getDocs(query(collection(db, "favorites"), where("userId", "==", user.uid)))
-        .then(snap => {
-          favorites.clear();
-          snap.forEach(doc => {
-            favorites.add(doc.data().tournamentId);
-          });
-          loadTournaments();
-        });
+    onAuthStateChanged(auth, async user => {
+      if (!user) {
+        favorites.clear();
+        loadTournaments();
+        return;
       }
+      // load user favorites
+      const favSnap = await getDocs(query(collection(db, "favorites"), where("userId", "==", user.uid)));
+      favorites.clear();
+      favSnap.forEach(fd => favorites.add(fd.data().tournamentId));
+      loadTournaments();
     });
 
     async function loadTournaments() {
@@ -109,8 +103,7 @@
       snap.forEach(tdoc => {
         const t = tdoc.data();
         t.id = tdoc.id;
-        const tDate = new Date(t.date);
-        if (tDate < today) return;
+        if(new Date(t.date) < today) return;
 
         const card = document.createElement("div");
         card.className = "tournament-card";
@@ -137,27 +130,24 @@
         }
 
         // Heart toggle
-        card.querySelector(".favorite-heart").addEventListener("click", async e => {
-          const heart = e.currentTarget;
+        const heartEl = card.querySelector(".favorite-heart");
+        heartEl.addEventListener("click", async () => {
           if (!auth.currentUser) return alert("Sign in to favorite tournaments.");
           if (favorites.has(t.id)) {
-            // remove favorite
-            const favSnap = await getDocs(query(collection(db, "favorites"),
-              where("userId","==", auth.currentUser.uid),
-              where("tournamentId","==", t.id)
-            ));
-            favSnap.forEach(async fd => { await deleteDoc(doc(db,"favorites",fd.id)); });
+            // Remove favorite
+            const favSnap = await getDocs(query(collection(db,"favorites"), where("userId","==", auth.currentUser.uid), where("tournamentId","==", t.id)));
+            favSnap.forEach(fd => deleteDoc(doc(db,"favorites",fd.id)));
             favorites.delete(t.id);
-            heart.classList.remove("favorited");
+            heartEl.classList.remove("favorited");
           } else {
-            // add favorite
+            // Add favorite
             await addDoc(collection(db,"favorites"), {
               userId: auth.currentUser.uid,
               tournamentId: t.id,
               createdAt: new Date()
             });
             favorites.add(t.id);
-            heart.classList.add("favorited");
+            heartEl.classList.add("favorited");
           }
         });
       });
