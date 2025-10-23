@@ -158,16 +158,36 @@ main {
 /* Delete button subtle */
 .delete-btn {
   background-color: transparent;
-  border: 1px solid #d9534f;
-  color: #d9534f;
-  border-radius: 5px;
-  padding: 0.3rem 0.6rem;
+  border: none;
+  color: red;
   cursor: pointer;
   font-size: 0.85rem;
   transition: 0.2s;
 }
 
 .delete-btn:hover {
-  background-color: #d9534f;
-  color: white;
+  text-decoration: underline;
+}
+
+/* Submit page autocomplete dropdown */
+.autocomplete-dropdown {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #ccc;
+  max-height: 150px;
+  overflow-y: auto;
+  background: white;
+  position: absolute;
+  width: calc(100% - 2px);
+  z-index: 1000;
+}
+
+.autocomplete-dropdown li {
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+.autocomplete-dropdown li:hover {
+  background: #f0f0f0;
 }
