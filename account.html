@@ -10,8 +10,8 @@
   <header class="site-header">
     <h1>Your Account</h1>
     <div style="display:flex; gap:10px; align-items:center;">
-      <a href="index.html" class="btn">Back to Home</a>
-      <button id="logout-btn" class="btn" style="display:none;">Sign Out</button>
+      <a href="index.html" class="submit-btn">Back to Home</a>
+      <button id="logout-btn" class="submit-btn" style="display:none;">Sign Out</button>
     </div>
   </header>
 
@@ -28,12 +28,12 @@
     <main class="main-content">
       <section>
         <h2>Your Submitted Tournaments</h2>
-        <div id="created-tournaments" class="tournament-grid"></div>
+        <div id="created-tournaments" class="tournament-grid">Loading your tournaments...</div>
       </section>
 
       <section style="margin-top:28px;">
         <h2>Your Favorites</h2>
-        <div id="favorites-list" class="tournament-grid"></div>
+        <div id="favorites" class="tournament-grid">Loading favorites...</div>
       </section>
     </main>
   </div>
@@ -41,66 +41,43 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-    import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    import { getFirestore, collection, query, where, orderBy, onSnapshot, getDoc, doc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
     import { firebaseConfig } from "./config.js";
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    const createdContainer = document.getElementById("created-tournaments");
-    const favoritesContainer = document.getElementById("favorites-list");
+    const createdDiv = document.getElementById("created-tournaments");
+    const favoritesDiv = document.getElementById("favorites");
     const userInfo = document.getElementById("user-info");
     const logoutBtn = document.getElementById("logout-btn");
 
+    let favoritesSet = new Set();
+
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        userInfo.textContent = "Sign in to view your account.";
+        createdDiv.innerHTML = "Sign in to view your tournaments.";
+        favoritesDiv.innerHTML = "Sign in to view your favorites.";
         logoutBtn.style.display = "none";
         return;
       }
-      userInfo.textContent = `Signed in as ${user.email}`;
       logoutBtn.style.display = "inline-block";
+      userInfo.textContent = `Signed in as ${user.email}`;
       logoutBtn.onclick = async () => { await signOut(auth); };
 
-      // Load created tournaments
-      const createdQ = query(collection(db, "tournaments"), where("createdBy", "==", user.uid), orderBy("date", "asc"));
+      // load submitted tournaments
+      const createdQ = query(collection(db, "tournaments"), where("createdBy","==", user.uid), orderBy("date","asc"));
       onSnapshot(createdQ, snap => {
-        createdContainer.innerHTML = "";
-        snap.docs.forEach(d => {
+        createdDiv.innerHTML = '';
+        snap.forEach(d => {
           const t = d.data();
-          const div = document.createElement("div");
-          div.className = "tournament-card";
-          div.innerHTML = `
+          t.id = d.id;
+          const card = document.createElement("div");
+          card.className = "tournament-card";
+          card.innerHTML = `
             <div class="tournament-info">
               <h3>${t.name}</h3>
-              <div class="details-row">
-                <p><strong>Date:</strong> ${t.date}</p>
-                <p><strong>City:</strong> ${t.city}</p>
-                <p><strong>Level:</strong> ${t.level}</p>
-                <p><strong>Address:</strong> ${t.address}</p>
-                <p><strong>Registration:</strong> ${t.registration}</p>
-              </div>
-            </div>
-          `;
-          createdContainer.appendChild(div);
-        });
-      });
-
-      // Load favorites
-      const favQ = query(collection(db, "favorites"), where("userId", "==", user.uid));
-      onSnapshot(favQ, async favSnap => {
-        favoritesContainer.innerHTML = "";
-        for (const fd of favSnap.docs) {
-          const favData = fd.data();
-          const tdoc = await getDoc(doc(db, "tournaments", favData.tournamentId));
-          if (!tdoc.exists()) continue;
-          const t = tdoc.data();
-          const div = document.createElement("div");
-          div.className = "tournament-card";
-          div.innerHTML = `
-            <div class="tournament-info">
-              <h3>${t.name} <span class="favorite-heart favorited" data-id="${tdoc.id}">♥</span></h3>
               <div class="details-row">
                 <p><strong>Date:</strong> ${t.date}</p>
                 <p><strong>City:</strong> ${t.city}</p>
@@ -111,12 +88,47 @@
               <p class="org"><strong>Organizer:</strong> ${t.organizerName} - ${t.organizerPhone}</p>
             </div>
           `;
-          favoritesContainer.appendChild(div);
+          createdDiv.appendChild(card);
+        });
+      });
 
-          // Heart click for removing
-          div.querySelector(".favorite-heart").addEventListener("click", async e => {
-            if (!confirm("Remove from favorites?")) return;
-            await deleteDoc(doc(db, "favorites", fd.id));
+      // load favorites
+      onSnapshot(query(collection(db,"favorites"), where("userId","==",user.uid)), async favSnap => {
+        favoritesSet.clear();
+        favoritesDiv.innerHTML = '';
+        for(const fd of favSnap.docs){
+          const fData = fd.data();
+          const tdoc = await getDoc(doc(db,"tournaments", fData.tournamentId));
+          if(!tdoc.exists()) continue;
+          const t = tdoc.data();
+          t.id = tdoc.id;
+          if(favoritesSet.has(t.id)) continue;
+          favoritesSet.add(t.id);
+
+          const card = document.createElement("div");
+          card.className = "tournament-card";
+          card.innerHTML = `
+            <div class="tournament-info">
+              <h3>${t.name} <span class="favorite-heart favorited">♥</span></h3>
+              <div class="details-row">
+                <p><strong>Date:</strong> ${t.date}</p>
+                <p><strong>City:</strong> ${t.city}</p>
+                <p><strong>Level:</strong> ${t.level}</p>
+                <p><strong>Address:</strong> ${t.address}</p>
+                <p><strong>Registration:</strong> ${t.registration}</p>
+              </div>
+              <p class="org"><strong>Organizer:</strong> ${t.organizerName} - ${t.organizerPhone}</p>
+            </div>
+          `;
+          favoritesDiv.appendChild(card);
+
+          // allow unfavorite
+          card.querySelector(".favorite-heart").addEventListener("click", async e=>{
+            const heart = e.currentTarget;
+            await deleteDoc(doc(db,"favorites", fd.id));
+            heart.classList.remove("favorited");
+            card.remove();
+            favoritesSet.delete(t.id);
           });
         }
       });
