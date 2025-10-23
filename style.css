@@ -17,19 +17,20 @@ header nav {
   margin-top: 0.5rem;
 }
 
-header nav .btn {
-  background-color: #FF7A00; /* darker orange */
+/* Universal button style */
+.btn {
+  background-color: orange;
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 8px;
   text-decoration: none;
-  margin: 0 0.3rem;
+  margin: 0.3rem;
+  cursor: pointer;
   transition: 0.2s;
-  font-weight: bold;
+  display: inline-block;
 }
-
-header nav .btn:hover {
-  background-color: #E56A00; /* slightly darker on hover */
+.btn:hover {
+  background-color: #e69500;
 }
 
 /* Main content */
@@ -48,15 +49,14 @@ main {
 .tournament-grid {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem; /* smaller gap for thin cards */
+  gap: 0.8rem;
 }
 
 .tournament-card {
   background: white;
   border-radius: 10px;
-  padding: 0.5rem; /* reduced padding to be thinner */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  font-size: 14px; /* smaller font for compact display */
+  padding: 0.6rem 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .tournament-info h3 {
@@ -75,15 +75,26 @@ main {
 
 .details-row p {
   margin: 0;
-  flex: 1 1 18%; /* fit 5 items in one row */
-  min-width: 120px;
+  flex: 1 1 45%;
+  min-width: 150px;
 }
 
-/* Organizer info */
 .org {
-  margin-top: 0.3rem;
-  font-size: 0.85rem;
+  margin-top: 0.4rem;
+  font-size: 0.95rem;
   color: #333;
+}
+
+/* Favorites heart icon */
+.favorite-heart {
+  font-size: 1.2rem;
+  color: #ccc;
+  cursor: pointer;
+  user-select: none;
+  margin-left: 5px;
+}
+.favorite-heart.favorited {
+  color: red;
 }
 
 /* Map container (bottom right, retractable) */
@@ -96,6 +107,7 @@ main {
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+  z-index: 1000;
 }
 
 #map-container:not(.visible) #map {
@@ -104,7 +116,7 @@ main {
 
 #toggle-map {
   width: 100%;
-  background: #FF7A00; /* darker orange */
+  background: orange;
   border: none;
   color: white;
   font-weight: bold;
@@ -112,9 +124,8 @@ main {
   padding: 0.5rem;
   cursor: pointer;
 }
-
 #toggle-map:hover {
-  background: #E56A00;
+  background: #e69500;
 }
 
 #map {
