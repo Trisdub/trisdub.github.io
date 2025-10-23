@@ -8,7 +8,7 @@
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-  <!-- Firebase -->
+  <!-- Firebase Compat -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -29,7 +29,6 @@
     <section id="tournament-list-section">
       <h2>Upcoming Tournaments</h2>
 
-      <!-- Filters -->
       <div class="tournament-filters">
         <input type="date" id="filter-date" />
         <select id="filter-province">
@@ -43,7 +42,6 @@
       <div id="tournament-list" class="tournament-grid"></div>
     </section>
 
-    <!-- Retractable map -->
     <div id="map-container" class="visible">
       <button id="toggle-map">🗺️ Hide Map</button>
       <div id="map"></div>
@@ -53,8 +51,8 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Firebase Config -->
   <script>
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCfVProG4-iZ8z4r869oiBHB7OX4Fl3lMU",
       authDomain: "volleyball-tourneys.firebaseapp.com",
@@ -69,30 +67,21 @@
     const auth = firebase.auth();
   </script>
 
-  <!-- Main Script -->
-  <script type="module">
+  <script>
     const listEl = document.getElementById('tournament-list');
     const mapContainer = document.getElementById('map-container');
     const toggleBtn = document.getElementById('toggle-map');
-    const mapDiv = document.getElementById('map');
-    let map;
-    let markers = [];
-    let favorites = new Set();
-
-    // Toggle map visibility
-    toggleBtn.addEventListener('click', () => {
-      mapContainer.classList.toggle('visible');
-      if (mapContainer.classList.contains('visible')) {
-        toggleBtn.textContent = "🗺️ Hide Map";
-        map.invalidateSize();
-      } else {
-        toggleBtn.textContent = "🗺️ Show Map";
-      }
-    });
-
-    // Filters
     const filterDate = document.getElementById("filter-date");
     const filterProvince = document.getElementById("filter-province");
+
+    let map, markers = [], favorites = new Set();
+
+    toggleBtn.addEventListener('click', () => {
+      mapContainer.classList.toggle('visible');
+      toggleBtn.textContent = mapContainer.classList.contains('visible') ? "🗺️ Hide Map" : "🗺️ Show Map";
+      map.invalidateSize();
+    });
+
     filterDate.addEventListener("change", loadTournaments);
     filterProvince.addEventListener("change", loadTournaments);
 
@@ -124,20 +113,19 @@
 
       const snap = await db.collection("tournaments").orderBy("date").get();
       snap.forEach(tdoc => {
-        const t = tdoc.data();
-        t.id = tdoc.id;
+        const t = tdoc.data(); t.id = tdoc.id;
 
         const tDate = new Date(t.date);
-        if (tDate < today) return;
-        if (selectedDate && tDate > selectedDate) return;
-        if (selectedProvince && t.province !== selectedProvince) return;
+        if(tDate < today) return;
+        if(selectedDate && tDate > selectedDate) return;
+        if(selectedProvince && t.province !== selectedProvince) return;
 
         const card = document.createElement("div");
         card.className = "tournament-card";
         const isFav = favorites.has(t.id) ? "favorited" : "";
         card.innerHTML = `
           <div class="tournament-info">
-            <h3>${t.name} <span class="favorite-heart ${isFav}">♥</span></h3>
+            <h3>${t.name} <span class="favorite-heart ${isFav}" data-id="${t.id}">♥</span></h3>
             <div class="details-row">
               <p><strong>Date:</strong> ${t.date}</p>
               <p><strong>City:</strong> ${t.city}</p>
@@ -150,34 +138,32 @@
         `;
         listEl.appendChild(card);
 
-        if (t.lat && t.lng) {
-          const marker = L.marker([t.lat, t.lng]).addTo(map)
+        if(t.lat && t.lng){
+          const marker = L.marker([t.lat,t.lng]).addTo(map)
             .bindPopup(`<strong>${t.name}</strong><br>${t.address}<br>${t.date}<br>${t.level}`);
           markers.push(marker);
         }
 
         const heartEl = card.querySelector(".favorite-heart");
         heartEl.addEventListener("click", async () => {
-          if (!auth.currentUser) return alert("Sign in to favorite tournaments.");
-          if (favorites.has(t.id)) {
+          if(!auth.currentUser){ alert("Sign in to favorite."); return; }
+          if(favorites.has(t.id)){
             const favSnap = await db.collection("favorites")
               .where("userId","==", auth.currentUser.uid)
               .where("tournamentId","==", t.id).get();
             favSnap.forEach(fd => db.collection("favorites").doc(fd.id).delete());
-            favorites.delete(t.id);
-            heartEl.classList.remove("favorited");
+            favorites.delete(t.id); heartEl.classList.remove("favorited");
           } else {
-            await db.collection("favorites").add({
-              userId: auth.currentUser.uid,
-              tournamentId: t.id,
-              createdAt: new Date()
-            });
-            favorites.add(t.id);
-            heartEl.classList.add("favorited");
+            await db.collection("favorites").add({ userId: auth.currentUser.uid, tournamentId: t.id, createdAt: new Date() });
+            favorites.add(t.id); heartEl.classList.add("favorited");
           }
         });
       });
     }
+
+    auth.onAuthStateChanged(user => {
+      loadFavorites().then(loadTournaments);
+    });
 
     initMap();
   </script>
