@@ -6,11 +6,13 @@
   <title>Volleyball Tournaments</title>
 
   <!-- Leaflet CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
-  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -26,6 +28,18 @@
   <main>
     <section id="tournament-list-section">
       <h2>Upcoming Tournaments</h2>
+
+      <!-- Filters -->
+      <div class="tournament-filters">
+        <input type="date" id="filter-date" />
+        <select id="filter-province">
+          <option value="">All Provinces</option>
+          <option value="Quebec">Quebec</option>
+          <option value="Ontario">Ontario</option>
+          <option value="Alberta">Alberta</option>
+        </select>
+      </div>
+
       <div id="tournament-list" class="tournament-grid"></div>
     </section>
 
@@ -39,12 +53,8 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Firebase + Main Script -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc, query, where, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-
+  <!-- Firebase Config -->
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCfVProG4-iZ8z4r869oiBHB7OX4Fl3lMU",
       authDomain: "volleyball-tourneys.firebaseapp.com",
@@ -54,22 +64,37 @@
       appId: "1:652764056781:web:70f90b5a6f5357aff16d84",
       measurementId: "G-HJF63771D7"
     };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+  </script>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-
+  <!-- Main Script -->
+  <script type="module">
     const listEl = document.getElementById('tournament-list');
     const mapContainer = document.getElementById('map-container');
     const toggleBtn = document.getElementById('toggle-map');
+    const mapDiv = document.getElementById('map');
     let map;
     let markers = [];
     let favorites = new Set();
 
+    // Toggle map visibility
     toggleBtn.addEventListener('click', () => {
       mapContainer.classList.toggle('visible');
-      if (mapContainer.classList.contains('visible')) map.invalidateSize();
+      if (mapContainer.classList.contains('visible')) {
+        toggleBtn.textContent = "🗺️ Hide Map";
+        map.invalidateSize();
+      } else {
+        toggleBtn.textContent = "🗺️ Show Map";
+      }
     });
+
+    // Filters
+    const filterDate = document.getElementById("filter-date");
+    const filterProvince = document.getElementById("filter-province");
+    filterDate.addEventListener("change", loadTournaments);
+    filterProvince.addEventListener("change", loadTournaments);
 
     function initMap() {
       map = L.map('map').setView([46.8, -71.2], 6);
@@ -77,33 +102,35 @@
         maxZoom: 19,
         attribution: '© OpenStreetMap'
       }).addTo(map);
+      loadFavorites();
       loadTournaments();
     }
 
-    onAuthStateChanged(auth, async user => {
-      if (!user) {
-        favorites.clear();
-        loadTournaments();
-        return;
-      }
-      // load user favorites
-      const favSnap = await getDocs(query(collection(db, "favorites"), where("userId", "==", user.uid)));
+    async function loadFavorites() {
       favorites.clear();
-      favSnap.forEach(fd => favorites.add(fd.data().tournamentId));
-      loadTournaments();
-    });
+      if (!auth.currentUser) return;
+      const favSnap = await db.collection("favorites").where("userId","==",auth.currentUser.uid).get();
+      favSnap.forEach(doc => favorites.add(doc.data().tournamentId));
+    }
 
     async function loadTournaments() {
       const today = new Date();
+      const selectedDate = filterDate.value ? new Date(filterDate.value) : null;
+      const selectedProvince = filterProvince.value;
+
       listEl.innerHTML = '';
       markers.forEach(m => map.removeLayer(m));
       markers = [];
 
-      const snap = await getDocs(query(collection(db, "tournaments"), orderBy("date")));
+      const snap = await db.collection("tournaments").orderBy("date").get();
       snap.forEach(tdoc => {
         const t = tdoc.data();
         t.id = tdoc.id;
-        if(new Date(t.date) < today) return;
+
+        const tDate = new Date(t.date);
+        if (tDate < today) return;
+        if (selectedDate && tDate > selectedDate) return;
+        if (selectedProvince && t.province !== selectedProvince) return;
 
         const card = document.createElement("div");
         card.className = "tournament-card";
@@ -129,19 +156,18 @@
           markers.push(marker);
         }
 
-        // Heart toggle
         const heartEl = card.querySelector(".favorite-heart");
         heartEl.addEventListener("click", async () => {
           if (!auth.currentUser) return alert("Sign in to favorite tournaments.");
           if (favorites.has(t.id)) {
-            // Remove favorite
-            const favSnap = await getDocs(query(collection(db,"favorites"), where("userId","==", auth.currentUser.uid), where("tournamentId","==", t.id)));
-            favSnap.forEach(fd => deleteDoc(doc(db,"favorites",fd.id)));
+            const favSnap = await db.collection("favorites")
+              .where("userId","==", auth.currentUser.uid)
+              .where("tournamentId","==", t.id).get();
+            favSnap.forEach(fd => db.collection("favorites").doc(fd.id).delete());
             favorites.delete(t.id);
             heartEl.classList.remove("favorited");
           } else {
-            // Add favorite
-            await addDoc(collection(db,"favorites"), {
+            await db.collection("favorites").add({
               userId: auth.currentUser.uid,
               tournamentId: t.id,
               createdAt: new Date()
