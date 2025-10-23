@@ -17,9 +17,9 @@ header nav {
   margin-top: 0.5rem;
 }
 
-/* Universal button style */
-.btn {
-  background-color: orange;
+/* All buttons (orange) */
+.btn, .submit-btn {
+  background-color: orange; /* darker orange */
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 8px;
@@ -29,8 +29,9 @@ header nav {
   transition: 0.2s;
   display: inline-block;
 }
-.btn:hover {
-  background-color: #e69500;
+
+.btn:hover, .submit-btn:hover {
+  background-color: #e69500; /* slightly darker on hover */
 }
 
 /* Main content */
@@ -49,20 +50,20 @@ main {
 .tournament-grid {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 1rem;
 }
 
 .tournament-card {
   background: white;
   border-radius: 10px;
-  padding: 0.6rem 1rem;
+  padding: 1rem;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .tournament-info h3 {
   margin-top: 0;
   color: #1e73be;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.5rem;
 }
 
 /* Horizontal layout for details */
@@ -70,31 +71,19 @@ main {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.7rem;
 }
 
 .details-row p {
   margin: 0;
   flex: 1 1 45%;
-  min-width: 150px;
+  min-width: 200px;
 }
 
 .org {
-  margin-top: 0.4rem;
+  margin-top: 0.6rem;
   font-size: 0.95rem;
   color: #333;
-}
-
-/* Favorites heart icon */
-.favorite-heart {
-  font-size: 1.2rem;
-  color: #ccc;
-  cursor: pointer;
-  user-select: none;
-  margin-left: 5px;
-}
-.favorite-heart.favorited {
-  color: red;
 }
 
 /* Map container (bottom right, retractable) */
@@ -107,7 +96,6 @@ main {
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 3px 8px rgba(0,0,0,0.2);
-  z-index: 1000;
 }
 
 #map-container:not(.visible) #map {
@@ -124,6 +112,7 @@ main {
   padding: 0.5rem;
   cursor: pointer;
 }
+
 #toggle-map:hover {
   background: #e69500;
 }
@@ -131,4 +120,18 @@ main {
 #map {
   height: 300px;
   width: 100%;
+}
+
+/* Heart icons */
+.favorite-heart {
+  font-size: 1.2rem;
+  color: #ccc; /* grey when empty */
+  cursor: pointer;
+  user-select: none;
+  margin-left: 5px;
+  transition: color 0.2s;
+}
+
+.favorite-heart.favorited {
+  color: red; /* solid red when favorited */
 }
