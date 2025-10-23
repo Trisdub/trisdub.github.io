@@ -1,93 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Your Account</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Your Account</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+.heart {
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #aaa;
+  margin-left: 0.3rem;
+  transition: color 0.2s;
+}
+.heart.favorited { color: red; }
+.btn { background-color: orange; color: white; padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; margin: 0.3rem; display: inline-block; }
+.btn:hover { background-color: #e69500; }
+</style>
 </head>
 <body>
-  <header class="site-header">
-    <h1>Your Account</h1>
-    <div style="display:flex; gap:10px; align-items:center;">
-      <a href="index.html" class="btn">Back to Home</a>
-      <button id="logout-btn" class="btn" style="display:none;">Sign Out</button>
+<header>
+  <h1>Your Account</h1>
+  <div>
+    <a href="index.html" class="btn">Back to Home</a>
+    <button id="logout-btn" class="btn" style="display:none;">Sign Out</button>
+  </div>
+</header>
+
+<main>
+  <section>
+    <h2>Your Submitted Tournaments</h2>
+    <div id="created-tournaments" class="tournament-grid"></div>
+  </section>
+
+  <section style="margin-top:28px;">
+    <h2>Your Favorites</h2>
+    <div id="favorites" class="tournament-grid"></div>
+  </section>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFirestore, collection, query, where, onSnapshot, getDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { firebaseConfig } from "./config.js";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const createdEl = document.getElementById("created-tournaments");
+const favoritesEl = document.getElementById("favorites");
+const logoutBtn = document.getElementById("logout-btn");
+
+function createCard(t, showHeart=false) {
+  const div = document.createElement('div');
+  div.className = 'tournament-card';
+  div.innerHTML = `
+    <div class="tournament-info">
+      <h3>${t.name} ${showHeart ? `<span class="heart" data-id="${t.id}">&#9825;</span>` : ''}</h3>
+      <div class="details-row">
+        <p><strong>Date:</strong> ${t.date}</p>
+        <p><strong>City:</strong> ${t.city}</p>
+        <p><strong>Level:</strong> ${t.level}</p>
+        <p><strong>Address:</strong> ${t.address}</p>
+        <p><strong>Registration:</strong> ${t.registration}</p>
+      </div>
+      <p class="org"><strong>Organizer:</strong> ${t.organizerName} - ${t.organizerPhone}</p>
     </div>
-  </header>
+  `;
+  return div;
+}
 
-  <main>
-    <section id="created-tournaments-section">
-      <h2>Your Submitted Tournaments</h2>
-      <div id="created-tournaments" class="tournament-grid"></div>
-    </section>
+onAuthStateChanged(auth, user => {
+  if (!user) return alert("Please login to view your account.");
+  logoutBtn.style.display = "inline-block";
+  logoutBtn.onclick = async () => await signOut(auth);
 
-    <section style="margin-top:28px;">
-      <h2>Your Favorites</h2>
-      <div id="favorites" class="tournament-grid"></div>
-    </section>
-  </main>
+  // Submitted tournaments
+  const createdQ = query(collection(db,"tournaments"), where("createdBy","==", user.uid));
+  onSnapshot(createdQ, snap => {
+    createdEl.innerHTML = '';
+    snap.docs.forEach(d => createdEl.appendChild(createCard({...d.data(), id:d.id})));
+    if (!snap.docs.length) createdEl.innerHTML = '<p>You have not submitted any tournaments yet.</p>';
+  });
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-    import { getFirestore, collection, query, where, onSnapshot, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-    import { firebaseConfig } from "./config.js";
+  // Favorites with heart
+  const favQ = query(collection(db,"favorites"), where("userId","==", user.uid));
+  onSnapshot(favQ, async favSnap => {
+    favoritesEl.innerHTML = '';
+    if (favSnap.empty) { favoritesEl.innerHTML='<p>You have no favorites yet.</p>'; return; }
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    const createdEl = document.getElementById("created-tournaments");
-    const favoritesEl = document.getElementById("favorites");
-    const logoutBtn = document.getElementById("logout-btn");
-
-    function createCard(t) {
-      const div = document.createElement('div');
-      div.className = 'tournament-card';
-      div.innerHTML = `
-        <div class="tournament-info">
-          <h3>${t.name}</h3>
-          <div class="details-row">
-            <p><strong>Date:</strong> ${t.date}</p>
-            <p><strong>City:</strong> ${t.city}</p>
-            <p><strong>Level:</strong> ${t.level}</p>
-            <p><strong>Address:</strong> ${t.address}</p>
-            <p><strong>Registration:</strong> ${t.registration}</p>
-          </div>
-          <p class="org"><strong>Organizer:</strong> ${t.organizerName} - ${t.organizerPhone}</p>
-        </div>
-      `;
-      return div;
-    }
-
-    onAuthStateChanged(auth, user => {
-      if (!user) return alert("Please login to view your account.");
-      logoutBtn.style.display = "inline-block";
-      logoutBtn.onclick = async () => await signOut(auth);
-
-      // Submitted tournaments
-      const createdQ = query(collection(db,"tournaments"), where("createdBy","==", user.uid));
-      onSnapshot(createdQ, snap => {
-        createdEl.innerHTML = '';
-        snap.docs.forEach(d => createdEl.appendChild(createCard({...d.data(), id:d.id})));
-        if (!snap.docs.length) createdEl.innerHTML = '<p>You have not submitted any tournaments yet.</p>';
-      });
-
-      // Favorites
-      const favQ = query(collection(db,"favorites"), where("userId","==", user.uid));
-      onSnapshot(favQ, async favSnap => {
-        favoritesEl.innerHTML = '';
-        if (favSnap.empty) { favoritesEl.innerHTML='<p>You have no favorites yet.</p>'; return; }
-
-        for (const fDoc of favSnap.docs) {
-          const favData = fDoc.data();
-          try {
-            const tDoc = await getDoc(doc(db,"tournaments", favData.tournamentId));
-            if (tDoc.exists()) favoritesEl.appendChild(createCard({ id:tDoc.id, ...tDoc.data() }));
-          } catch(e) { console.error(e); }
+    for (const fDoc of favSnap.docs) {
+      const favData = fDoc.data();
+      try {
+        const tDoc = await getDoc(doc(db,"tournaments", favData.tournamentId));
+        if (tDoc.exists()) {
+          const card = createCard({ id:tDoc.id, ...tDoc.data() }, true);
+          favoritesEl.appendChild(card);
+          const heart = card.querySelector('.heart');
+          heart.classList.add('favorited');
+          heart.onclick = async () => {
+            await deleteDoc(doc(db,"favorites",fDoc.id));
+            card.remove();
+          };
         }
-      });
-    });
-  </script>
+      } catch(e){ console.error(e); }
+    }
+  });
+});
+</script>
 </body>
 </html>
