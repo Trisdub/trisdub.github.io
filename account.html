@@ -6,6 +6,7 @@
 <title>Your Account</title>
 <link rel="stylesheet" href="style.css" />
 <style>
+/* Hearts */
 .heart {
   cursor: pointer;
   font-size: 1.2rem;
@@ -14,7 +15,19 @@
   transition: color 0.2s;
 }
 .heart.favorited { color: red; }
-.btn { background-color: orange; color: white; padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; margin: 0.3rem; display: inline-block; }
+
+/* Buttons consistent with other pages */
+.btn {
+  background-color: orange;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  text-decoration: none;
+  margin: 0.3rem;
+  display: inline-block;
+  font-weight: bold;
+  transition: 0.2s;
+}
 .btn:hover { background-color: #e69500; }
 </style>
 </head>
@@ -56,6 +69,7 @@ const logoutBtn = document.getElementById("logout-btn");
 function createCard(t, showHeart=false) {
   const div = document.createElement('div');
   div.className = 'tournament-card';
+  div.dataset.id = t.id;
   div.innerHTML = `
     <div class="tournament-info">
       <h3>${t.name} ${showHeart ? `<span class="heart" data-id="${t.id}">&#9825;</span>` : ''}</h3>
@@ -85,19 +99,24 @@ onAuthStateChanged(auth, user => {
     if (!snap.docs.length) createdEl.innerHTML = '<p>You have not submitted any tournaments yet.</p>';
   });
 
-  // Favorites with heart
+  // Favorites with heart, prevent duplicates
   const favQ = query(collection(db,"favorites"), where("userId","==", user.uid));
   onSnapshot(favQ, async favSnap => {
     favoritesEl.innerHTML = '';
+    const addedTournaments = new Set(); // Track added tournament IDs
+
     if (favSnap.empty) { favoritesEl.innerHTML='<p>You have no favorites yet.</p>'; return; }
 
     for (const fDoc of favSnap.docs) {
       const favData = fDoc.data();
+      if (!favData.tournamentId || addedTournaments.has(favData.tournamentId)) continue;
       try {
         const tDoc = await getDoc(doc(db,"tournaments", favData.tournamentId));
         if (tDoc.exists()) {
           const card = createCard({ id:tDoc.id, ...tDoc.data() }, true);
           favoritesEl.appendChild(card);
+          addedTournaments.add(favData.tournamentId);
+
           const heart = card.querySelector('.heart');
           heart.classList.add('favorited');
           heart.onclick = async () => {
