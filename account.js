@@ -1,69 +1,77 @@
-import { auth, db } from './config.js';
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
-import { collection, query, where, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFirestore, collection, query, where, orderBy, onSnapshot, getDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { firebaseConfig } from "./config.js";
 
-const userEmail = document.getElementById('userEmail');
-const userEventsTable = document.getElementById('userEventsTable');
-const deleteAllBtn = document.getElementById('deleteAllBtn');
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    userEmail.textContent = `Signed in as: ${user.email}`;
-    loadUserEvents(user.uid);
-  } else {
-    window.location.href = "auth.html"; // redirect if not logged in
-  }
-});
+const createdEl = document.getElementById("created-tournaments");
+const favEl = document.getElementById("favorites-list");
+const logoutBtn = document.getElementById("logout-btn");
 
-async function loadUserEvents(uid) {
-  userEventsTable.innerHTML = "";
-
-  const q = query(collection(db, "tournaments"), where("createdBy", "==", uid));
-  const querySnapshot = await getDocs(q);
-
-  if (querySnapshot.empty) {
-    userEventsTable.innerHTML = `<tr><td colspan="5">No events found.</td></tr>`;
-    deleteAllBtn.style.display = "none";
-    return;
-  }
-
-  querySnapshot.forEach(docSnap => {
-    const data = docSnap.data();
-    const row = document.createElement("tr");
-
-    row.innerHTML = `
-      <td>${data.name}</td>
-      <td>${data.date}</td>
-      <td>${data.location}</td>
-      <td>${data.province}</td>
-      <td><button class="deleteBtn" data-id="${docSnap.id}">Delete</button></td>
+function renderTournaments(container, list, showHeart=true){
+  container.innerHTML = '';
+  if(!list.length) container.innerHTML = "<p>No tournaments.</p>";
+  list.forEach(t=>{
+    const card = document.createElement("div");
+    card.className = "tournament-card";
+    card.innerHTML = `
+      <div class="tournament-info">
+        <h3>
+          ${t.name} 
+          ${showHeart? `<span class="favorite-heart ${t.favorited?'favorited':''}" data-id="${t.id}">♥</span>` : ''}
+        </h3>
+        <div class="details-row">
+          <p><strong>Date:</strong> ${t.date}</p>
+          <p><strong>City:</strong> ${t.city}</p>
+          <p><strong>Level:</strong> ${t.level}</p>
+          <p><strong>Address:</strong> ${t.address}</p>
+          <p><strong>Registration:</strong> ${t.registration}</p>
+        </div>
+        <p class="org"><strong>Organizer:</strong> ${t.organizerName} - ${t.organizerPhone}</p>
+        ${t.canDelete? `<button class="delete-btn" data-id="${t.id}">Delete Tournament</button>` : ''}
+      </div>
     `;
+    container.appendChild(card);
 
-    userEventsTable.appendChild(row);
-  });
+    if(t.canDelete){
+      const btn = card.querySelector(".delete-btn");
+      btn.addEventListener("click", async ()=>{
+        if(!confirm("Delete this tournament?")) return;
+        await deleteDoc(doc(db,"tournaments",t.id));
+      });
+    }
 
-  deleteAllBtn.style.display = "inline-block";
-
-  // Attach delete handlers
-  document.querySelectorAll(".deleteBtn").forEach(btn => {
-    btn.addEventListener("click", async (e) => {
-      const id = e.target.dataset.id;
-      await deleteDoc(doc(db, "tournaments", id));
-      loadUserEvents(auth.currentUser.uid);
-    });
+    if(showHeart){
+      const heart = card.querySelector(".favorite-heart");
+      heart.addEventListener("click", async ()=>{
+        const favQuery = query(collection(db,"favorites"), where("userId","==",auth.currentUser.uid), where("tournamentId","==",t.id));
+        const snap = await getDocs(favQuery);
+        if(heart.classList.contains("favorited")){
+          heart.classList.remove("favorited");
+          snap.forEach(d=>deleteDoc(doc(db,"favorites",d.id)));
+        } else {
+          heart.classList.add("favorited");
+          await addDoc(collection(db,"favorites"), { userId: auth.currentUser.uid, tournamentId: t.id, createdAt:new Date() });
+        }
+      });
+    }
   });
 }
 
-// Delete all events
-deleteAllBtn.addEventListener("click", async () => {
-  if (confirm("Are you sure you want to delete ALL your events?")) {
-    const q = query(collection(db, "tournaments"), where("createdBy", "==", auth.currentUser.uid));
-    const querySnapshot = await getDocs(q);
+onAuthStateChanged(auth,user=>{
+  if(!user) return;
+  logoutBtn.style.display="inline-block";
+  logoutBtn.onclick = ()=>signOut(auth);
 
-    for (const docSnap of querySnapshot.docs) {
-      await deleteDoc(doc(db, "tournaments", docSnap.id));
-    }
+  // Created tournaments
+  const createdQ = query(collection(db,"tournaments"), where("createdBy","==",user.uid), orderBy("date","asc"));
+  onSnapshot(createdQ,snap=>{
+    const list = snap.docs.map(d=>({...d.data(), id:d.id, canDelete:true}));
+    renderTournaments(createdEl,list,false);
+  });
 
-    loadUserEvents(auth.currentUser.uid);
-  }
-});
+  // Favorites
+  const favQ = query(collection(db,"
