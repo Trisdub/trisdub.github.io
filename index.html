@@ -6,17 +6,26 @@
   <title>Volleyball Tournaments</title>
 
   <!-- Leaflet CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
-  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
   <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Heart favorite icon */
+    .heart {
+      cursor: pointer;
+      font-size: 1.3rem;
+      color: #aaa;
+      margin-left: 0.5rem;
+      transition: color 0.2s;
+    }
+    .heart.favorited { color: red; }
+    .details-row p { margin: 0 0.5rem 0.3rem 0; }
+  </style>
 </head>
 <body>
   <header>
@@ -24,7 +33,7 @@
     <nav>
       <a href="submit.html" class="btn">Submit Event</a>
       <a href="account.html" class="btn">My Account</a>
-      <a href="auth.html" class="btn">Login</a>
+      <a href="auth.html" class="btn" id="login-btn">Login</a>
     </nav>
   </header>
 
@@ -44,29 +53,24 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Firebase Config -->
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCfVProG4-iZ8z4r869oiBHB7OX4Fl3lMU",
-      authDomain: "volleyball-tourneys.firebaseapp.com",
-      projectId: "volleyball-tourneys",
-      storageBucket: "volleyball-tourneys.firebasestorage.app",
-      messagingSenderId: "652764056781",
-      appId: "1:652764056781:web:70f90b5a6f5357aff16d84",
-      measurementId: "G-HJF63771D7"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-  </script>
-
   <!-- Main Script -->
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, where, addDoc, deleteDoc, doc, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+    import { firebaseConfig } from "./config.js";
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
     const listEl = document.getElementById('tournament-list');
     const mapContainer = document.getElementById('map-container');
     const toggleBtn = document.getElementById('toggle-map');
-    const mapDiv = document.getElementById('map');
     let map;
     let markers = [];
+    let currentUser = null;
+    let favoritesSet = new Set();
 
     // Toggle map visibility
     toggleBtn.addEventListener('click', () => {
@@ -79,62 +83,89 @@
       }
     });
 
-    // Initialize map immediately on page load
-    initMap();
+    // Initialize map
+    map = L.map('map').setView([46.8, -71.2], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
 
-    function initMap() {
-      map = L.map('map').setView([46.8, -71.2], 6);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap'
-      }).addTo(map);
-      loadTournaments();
+    // Load tournaments
+    async function loadTournaments() {
+      const today = new Date();
+      const snapshot = await getDocs(query(collection(db, 'tournaments'), orderBy('date')));
+      listEl.innerHTML = '';
+      markers.forEach(m => map.removeLayer(m));
+      markers = [];
+
+      snapshot.forEach(docSnap => {
+        const t = docSnap.data();
+        const tournamentDate = new Date(t.date);
+        if (tournamentDate < today) return; // Skip past tournaments
+
+        const div = document.createElement('div');
+        div.className = 'tournament-card';
+        div.innerHTML = `
+          <div class="tournament-info">
+            <h3>${t.name} <span class="heart" data-id="${docSnap.id}">&#9825;</span></h3>
+            <div class="details-row">
+              <p><strong>Date:</strong> ${t.date}</p>
+              <p><strong>City:</strong> ${t.city}</p>
+              <p><strong>Level:</strong> ${t.level}</p>
+              <p><strong>Address:</strong> ${t.address}</p>
+              <p><strong>Registration:</strong> ${t.registration}</p>
+            </div>
+            <p class="org"><strong>Organizer:</strong> ${t.organizerName} - ${t.organizerPhone}</p>
+          </div>
+        `;
+        listEl.appendChild(div);
+
+        // Map marker
+        if (t.lat && t.lng) {
+          const marker = L.marker([t.lat, t.lng]).addTo(map);
+          marker.bindPopup(`<strong>${t.name}</strong><br>${t.address}<br>${t.date}<br>${t.level}`);
+          markers.push(marker);
+        }
+      });
+
+      updateHearts();
     }
 
-    function loadTournaments() {
-      const today = new Date();
+    // Update heart icons based on user favorites
+    async function updateHearts() {
+      if (!currentUser) return;
+      favoritesSet.clear();
+      const favSnapshot = await getDocs(query(collection(db, 'favorites'), where('userId','==',currentUser.uid)));
+      favSnapshot.forEach(f => favoritesSet.add(f.data().tournamentId));
 
-      db.collection('tournaments').orderBy('date').get().then(snapshot => {
-        listEl.innerHTML = '';
-        markers.forEach(m => map.removeLayer(m));
-        markers = [];
-
-        snapshot.forEach(doc => {
-          const t = doc.data();
-          const tournamentDate = new Date(t.date);
-
-          // Skip past tournaments
-          if (tournamentDate < today) return;
-
-          // Create list card
-          const div = document.createElement('div');
-          div.className = 'tournament-card';
-          div.innerHTML = `
-            <div class="tournament-info">
-              <h3>${t.name}</h3>
-              <div class="details-row">
-                <p><strong>Date:</strong> ${t.date}</p>
-                <p><strong>City:</strong> ${t.city}</p>
-                <p><strong>Level:</strong> ${t.level}</p>
-                <p><strong>Address:</strong> ${t.address}</p>
-                <p><strong>Registration:</strong> ${t.registration}</p>
-              </div>
-              <p class="org"><strong>Organizer:</strong> ${t.organizerName} - ${t.organizerPhone}</p>
-            </div>
-          `;
-          listEl.appendChild(div);
-
-          // Add map marker
-          if (t.lat && t.lng) {
-            const marker = L.marker([t.lat, t.lng]).addTo(map);
-            marker.bindPopup(
-              `<strong>${t.name}</strong><br>${t.address}<br>${t.date}<br>${t.level}`
-            );
-            markers.push(marker);
-          }
-        });
+      document.querySelectorAll('.heart').forEach(heart => {
+        const tid = heart.dataset.id;
+        heart.classList.toggle('favorited', favoritesSet.has(tid));
+        heart.addEventListener('click', () => toggleFavorite(tid, heart));
       });
     }
+
+    async function toggleFavorite(tournamentId, heartEl) {
+      if (!currentUser) return alert('Please login to favorite tournaments.');
+      const docId = `${currentUser.uid}_${tournamentId}`;
+      if (favoritesSet.has(tournamentId)) {
+        await deleteDoc(doc(db, 'favorites', docId));
+        favoritesSet.delete(tournamentId);
+        heartEl.classList.remove('favorited');
+      } else {
+        await addDoc(collection(db,'favorites'), { userId: currentUser.uid, tournamentId, createdAt: new Date() });
+        favoritesSet.add(tournamentId);
+        heartEl.classList.add('favorited');
+      }
+    }
+
+    // Auth listener
+    onAuthStateChanged(auth, user => {
+      currentUser = user;
+      if (user) updateHearts();
+    });
+
+    loadTournaments();
   </script>
 </body>
 </html>
