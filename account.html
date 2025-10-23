@@ -1,125 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Your Account - Volleyball Tournaments</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Your Account</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <h1>🏐 Your Account</h1>
-    <nav>
-      <button id="back-home" class="btn">Back to Home</button>
-      <button id="sign-out" class="btn">Sign Out</button>
-    </nav>
+  <header class="site-header">
+    <h1>Your Account</h1>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <a href="index.html" class="btn">Back to Home</a>
+      <button id="logout-btn" class="btn" style="display:none;">Sign Out</button>
+    </div>
   </header>
 
   <main>
-    <section id="submitted-tournaments">
+    <section id="created-tournaments-section">
       <h2>Your Submitted Tournaments</h2>
-      <div id="submitted-list" class="tournament-grid"></div>
+      <div id="created-tournaments" class="tournament-grid"></div>
     </section>
 
-    <section id="favorites" style="margin-top:2rem;">
+    <section style="margin-top:28px;">
       <h2>Your Favorites</h2>
-      <div id="favorites-list" class="tournament-grid"></div>
+      <div id="favorites" class="tournament-grid"></div>
     </section>
   </main>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-    import { getFirestore, collection, query, where, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    import { getFirestore, collection, query, where, onSnapshot, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
     import { firebaseConfig } from "./config.js";
 
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
     const auth = getAuth(app);
+    const db = getFirestore(app);
 
-    const submittedList = document.getElementById('submitted-list');
-    const favoritesList = document.getElementById('favorites-list');
-    const backHome = document.getElementById('back-home');
-    const signOutBtn = document.getElementById('sign-out');
+    const createdEl = document.getElementById("created-tournaments");
+    const favoritesEl = document.getElementById("favorites");
+    const logoutBtn = document.getElementById("logout-btn");
 
-    backHome.addEventListener('click', () => window.location.href = 'index.html');
-    signOutBtn.addEventListener('click', async () => {
-      await signOut(auth);
-      window.location.href = 'auth.html';
-    });
-
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        submittedList.innerHTML = "<p>Please log in to see your submitted tournaments.</p>";
-        favoritesList.innerHTML = "<p>Please log in to see your favorites.</p>";
-        signOutBtn.style.display = "none";
-        return;
-      }
-      signOutBtn.style.display = "inline-block";
-
-      loadSubmitted(user.uid);
-      loadFavorites(user.uid);
-    });
-
-    async function loadSubmitted(uid) {
-      const today = new Date();
-      const q = query(collection(db, 'tournaments'), where('createdBy', '==', uid), orderBy('date', 'asc'));
-      const snap = await getDocs(q);
-      submittedList.innerHTML = '';
-      snap.docs.forEach(doc => {
-        const t = doc.data();
-        if (new Date(t.date) < today) return; // hide past tournaments
-        const div = document.createElement('div');
-        div.className = 'tournament-card';
-        div.innerHTML = `
-          <div class="tournament-info">
-            <h3>${t.name}</h3>
-            <div class="details-row">
-              <p><strong>Date:</strong> ${t.date}</p>
-              <p><strong>City:</strong> ${t.city}</p>
-              <p><strong>Level:</strong> ${t.level}</p>
-              <p><strong>Address:</strong> ${t.address}</p>
-              <p><strong>Registration:</strong> ${t.registration}</p>
-            </div>
-            <p class="org"><strong>Organizer:</strong> ${t.organizerName} - ${t.organizerPhone}</p>
+    function createCard(t) {
+      const div = document.createElement('div');
+      div.className = 'tournament-card';
+      div.innerHTML = `
+        <div class="tournament-info">
+          <h3>${t.name}</h3>
+          <div class="details-row">
+            <p><strong>Date:</strong> ${t.date}</p>
+            <p><strong>City:</strong> ${t.city}</p>
+            <p><strong>Level:</strong> ${t.level}</p>
+            <p><strong>Address:</strong> ${t.address}</p>
+            <p><strong>Registration:</strong> ${t.registration}</p>
           </div>
-        `;
-        submittedList.appendChild(div);
-      });
+          <p class="org"><strong>Organizer:</strong> ${t.organizerName} - ${t.organizerPhone}</p>
+        </div>
+      `;
+      return div;
     }
 
-    async function loadFavorites(uid) {
-      const today = new Date();
-      const favSnap = await getDocs(collection(db, `users/${uid}/favorites`));
-      favoritesList.innerHTML = '';
-      for (const fd of favSnap.docs) {
-        const favData = fd.data();
-        if (!favData?.tournamentId) continue;
-        try {
-          const tdoc = await getDocs(collection(db, 'tournaments'));
-          const t = tdoc.docs.find(d => d.id === favData.tournamentId)?.data();
-          if (!t || new Date(t.date) < today) continue;
-          const div = document.createElement('div');
-          div.className = 'tournament-card';
-          div.innerHTML = `
-            <div class="tournament-info">
-              <h3>${t.name}</h3>
-              <div class="details-row">
-                <p><strong>Date:</strong> ${t.date}</p>
-                <p><strong>City:</strong> ${t.city}</p>
-                <p><strong>Level:</strong> ${t.level}</p>
-                <p><strong>Address:</strong> ${t.address}</p>
-                <p><strong>Registration:</strong> ${t.registration}</p>
-              </div>
-              <p class="org"><strong>Organizer:</strong> ${t.organizerName} - ${t.organizerPhone}</p>
-            </div>
-          `;
-          favoritesList.appendChild(div);
-        } catch (err) {
-          console.error(err);
+    onAuthStateChanged(auth, user => {
+      if (!user) return alert("Please login to view your account.");
+      logoutBtn.style.display = "inline-block";
+      logoutBtn.onclick = async () => await signOut(auth);
+
+      // Submitted tournaments
+      const createdQ = query(collection(db,"tournaments"), where("createdBy","==", user.uid));
+      onSnapshot(createdQ, snap => {
+        createdEl.innerHTML = '';
+        snap.docs.forEach(d => createdEl.appendChild(createCard({...d.data(), id:d.id})));
+        if (!snap.docs.length) createdEl.innerHTML = '<p>You have not submitted any tournaments yet.</p>';
+      });
+
+      // Favorites
+      const favQ = query(collection(db,"favorites"), where("userId","==", user.uid));
+      onSnapshot(favQ, async favSnap => {
+        favoritesEl.innerHTML = '';
+        if (favSnap.empty) { favoritesEl.innerHTML='<p>You have no favorites yet.</p>'; return; }
+
+        for (const fDoc of favSnap.docs) {
+          const favData = fDoc.data();
+          try {
+            const tDoc = await getDoc(doc(db,"tournaments", favData.tournamentId));
+            if (tDoc.exists()) favoritesEl.appendChild(createCard({ id:tDoc.id, ...tDoc.data() }));
+          } catch(e) { console.error(e); }
         }
-      }
-    }
+      });
+    });
   </script>
 </body>
 </html>
