@@ -92,7 +92,7 @@
           favSnap.forEach(fd => db.collection("favorites").doc(fd.id).delete());
           favSet.delete(t.id);
           heartEl.classList.remove("favorited");
-          if (favoriteId) card.remove();
+          if (favoriteId) card.remove(); // remove from favorites list UI
         } else {
           // Add favorite
           const docRef = await addDoc(collection(db,"favorites"), {
