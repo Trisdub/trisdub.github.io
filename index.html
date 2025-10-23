@@ -1,155 +1,144 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Volleyball Tournaments</title>
-<link rel="stylesheet" href="style.css" />
-<style>
-/* Heart favorite icon */
-.heart {
-  cursor: pointer;
-  font-size: 1.3rem;
-  color: #aaa;
-  margin-left: 0.5rem;
-  transition: color 0.2s;
-}
-.heart.favorited { color: red; }
-.details-row p { margin: 0 0.5rem 0.3rem 0; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Volleyball Tournaments</title>
+
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<header>
-  <h1>🏐 Volleyball Tournaments</h1>
-  <nav>
-    <a href="submit.html" class="btn">Submit Event</a>
-    <a href="account.html" class="btn">My Account</a>
-    <a href="auth.html" class="btn" id="login-btn">Login</a>
-  </nav>
-</header>
+  <header>
+    <h1>🏐 Volleyball Tournaments</h1>
+    <nav>
+      <a href="submit.html" class="btn">Submit Event</a>
+      <a href="account.html" class="btn">My Account</a>
+      <a href="auth.html" class="btn">Login</a>
+    </nav>
+  </header>
 
-<main>
-  <section id="tournament-list-section">
-    <h2>Upcoming Tournaments</h2>
-    <div id="tournament-list" class="tournament-grid"></div>
-  </section>
+  <main>
+    <section id="tournament-list-section">
+      <h2>Upcoming Tournaments</h2>
+      <div id="tournament-list" class="tournament-grid"></div>
+    </section>
 
-  <div id="map-container" class="visible">
-    <button id="toggle-map">🗺️ Hide Map</button>
-    <div id="map"></div>
-  </div>
-</main>
+    <!-- Retractable map -->
+    <div id="map-container" class="visible">
+      <button id="toggle-map">🗺️ Hide Map</button>
+      <div id="map"></div>
+    </div>
+  </main>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getFirestore, collection, getDocs, query, where, addDoc, deleteDoc, doc, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { firebaseConfig } from "./config.js";
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
+  <!-- Main Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+    import { getFirestore, collection, getDocs, addDoc, query, where, orderBy, doc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+    import { firebaseConfig } from "./config.js";
 
-const listEl = document.getElementById('tournament-list');
-const mapContainer = document.getElementById('map-container');
-const toggleBtn = document.getElementById('toggle-map');
-let map;
-let markers = [];
-let currentUser = null;
-let favoritesSet = new Set();
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
 
-// Toggle map
-toggleBtn.addEventListener('click', () => {
-  mapContainer.classList.toggle('visible');
-  if (mapContainer.classList.contains('visible')) {
-    toggleBtn.textContent = "🗺️ Hide Map";
-    map.invalidateSize();
-  } else toggleBtn.textContent = "🗺️ Show Map";
-});
+    const listEl = document.getElementById('tournament-list');
+    const mapContainer = document.getElementById('map-container');
+    const toggleBtn = document.getElementById('toggle-map');
 
-// Initialize map
-map = L.map('map').setView([46.8, -71.2], 6);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+    let map = L.map('map').setView([46.8, -71.2], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
 
-// Load tournaments
-async function loadTournaments() {
-  const today = new Date();
-  const snapshot = await getDocs(query(collection(db, 'tournaments'), orderBy('date')));
-  listEl.innerHTML = '';
-  markers.forEach(m => map.removeLayer(m));
-  markers = [];
+    let markers = [];
+    let favorites = [];
 
-  snapshot.forEach(docSnap => {
-    const t = docSnap.data();
-    const tournamentDate = new Date(t.date);
-    if (tournamentDate < today) return;
+    toggleBtn.addEventListener('click', () => {
+      mapContainer.classList.toggle('visible');
+      toggleBtn.textContent = mapContainer.classList.contains('visible') ? "🗺️ Hide Map" : "🗺️ Show Map";
+      if (mapContainer.classList.contains('visible')) map.invalidateSize();
+    });
 
-    const div = document.createElement('div');
-    div.className = 'tournament-card';
-    div.innerHTML = `
-      <div class="tournament-info">
-        <h3>${t.name} <span class="heart" data-id="${docSnap.id}">&#9825;</span></h3>
-        <div class="details-row">
-          <p><strong>Date:</strong> ${t.date}</p>
-          <p><strong>City:</strong> ${t.city}</p>
-          <p><strong>Level:</strong> ${t.level}</p>
-          <p><strong>Address:</strong> ${t.address}</p>
-          <p><strong>Registration:</strong> ${t.registration}</p>
-        </div>
-        <p class="org"><strong>Organizer:</strong> ${t.organizerName} - ${t.organizerPhone}</p>
-      </div>
-    `;
-    listEl.appendChild(div);
+    function renderTournaments(tournaments) {
+      listEl.innerHTML = '';
+      tournaments.forEach(t => {
+        const card = document.createElement('div');
+        card.className = 'tournament-card';
 
-    // Map marker
-    if (t.lat && t.lng) {
-      const marker = L.marker([t.lat, t.lng]).addTo(map);
-      marker.bindPopup(`<strong>${t.name}</strong><br>${t.address}<br>${t.date}<br>${t.level}`);
-      markers.push(marker);
+        // Check if tournament is already favorited
+        const isFavorited = favorites.includes(t.id);
+
+        card.innerHTML = `
+          <div class="tournament-info">
+            <h3>${t.name} <span class="favorite-heart ${isFavorited ? 'favorited' : ''}" data-id="${t.id}">♥</span></h3>
+            <div class="details-row">
+              <p><strong>Date:</strong> ${t.date}</p>
+              <p><strong>City:</strong> ${t.city}</p>
+              <p><strong>Level:</strong> ${t.level}</p>
+              <p><strong>Address:</strong> ${t.address}</p>
+              <p><strong>Registration:</strong> ${t.registration}</p>
+            </div>
+            <p class="org"><strong>Organizer:</strong> ${t.organizerName} - ${t.organizerPhone}</p>
+          </div>
+        `;
+        listEl.appendChild(card);
+
+        // Add map marker
+        if (t.lat && t.lng) {
+          const marker = L.marker([t.lat, t.lng]).addTo(map);
+          marker.bindPopup(`<strong>${t.name}</strong><br>${t.address}<br>${t.date}<br>${t.level}`);
+          markers.push(marker);
+        }
+      });
+
+      // Add heart click listeners
+      document.querySelectorAll('.favorite-heart').forEach(el => {
+        el.addEventListener('click', async (e) => {
+          const id = e.currentTarget.dataset.id;
+          const user = auth.currentUser;
+          if (!user) return alert("Sign in to favorite tournaments.");
+          const favDocId = `${user.uid}_${id}`;
+          const favRef = doc(db, "favorites", favDocId);
+
+          if (favorites.includes(id)) {
+            // Remove favorite
+            await favRef.delete();
+            favorites = favorites.filter(f => f !== id);
+            e.currentTarget.classList.remove('favorited');
+          } else {
+            // Add favorite
+            await addDoc(collection(db, "favorites"), {
+              userId: user.uid,
+              tournamentId: id,
+              createdAt: new Date()
+            });
+            favorites.push(id);
+            e.currentTarget.classList.add('favorited');
+          }
+        });
+      });
     }
-  });
 
-  updateHearts();
-}
+    async function loadTournaments() {
+      const today = new Date();
+      const snap = await getDocs(query(collection(db, "tournaments"), orderBy("date")));
+      const tournaments = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(t => new Date(t.date) >= today); // filter past tournaments
+      renderTournaments(tournaments);
+    }
 
-// Update hearts
-async function updateHearts() {
-  if (!currentUser) return;
-  favoritesSet.clear();
-  const favSnapshot = await getDocs(query(collection(db, 'favorites'), where('userId','==',currentUser.uid)));
-  favSnapshot.forEach(f => favoritesSet.add(f.data().tournamentId));
-
-  document.querySelectorAll('.heart').forEach(heart => {
-    const tid = heart.dataset.id;
-    heart.classList.toggle('favorited', favoritesSet.has(tid));
-    heart.onclick = () => toggleFavorite(tid, heart);
-  });
-}
-
-async function toggleFavorite(tournamentId, heartEl) {
-  if (!currentUser) return alert('Please login to favorite tournaments.');
-  // Check if already favorited
-  const docId = `${currentUser.uid}_${tournamentId}`;
-  if (favoritesSet.has(tournamentId)) {
-    // Remove
-    const favs = await getDocs(query(collection(db,'favorites'), where('userId','==',currentUser.uid), where('tournamentId','==',tournamentId)));
-    favs.forEach(f => deleteDoc(doc(db,'favorites',f.id)));
-    favoritesSet.delete(tournamentId);
-    heartEl.classList.remove('favorited');
-  } else {
-    await addDoc(collection(db,'favorites'), { userId: currentUser.uid, tournamentId, createdAt: new Date() });
-    favoritesSet.add(tournamentId);
-    heartEl.classList.add('favorited');
-  }
-}
-
-onAuthStateChanged(auth, user => {
-  currentUser = user;
-  if (user) updateHearts();
-});
-
-loadTournaments();
-</script>
+    loadTournaments();
+  </script>
 </body>
 </html>
