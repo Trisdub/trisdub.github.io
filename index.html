@@ -1,184 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Volleyball Tournaments</title>
-<link rel="stylesheet" href="style.css">
-<!-- Leaflet for the map -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.5/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.5/dist/leaflet.js"></script>
-<script type="module" src="config.js"></script>
-<style>
-  body {
-    background-color: #0077cc; /* blue background */
-    color: #fff;
-    font-family: Arial, sans-serif;
-  }
-  header {
-    background-color: #005fa3;
-    padding: 1rem;
-    text-align: center;
-  }
-  header nav a {
-    color: #ff6600;
-    margin: 0 10px;
-    text-decoration: none;
-    font-weight: bold;
-  }
-  header nav a:hover { text-decoration: underline; }
-  main {
-    padding: 20px;
-    max-width: 1000px;
-    margin: auto;
-  }
-  .tournament-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    justify-content: center;
-  }
-  .tournament-card {
-    background-color: #fff;
-    color: #333;
-    border-radius: 10px;
-    padding: 12px;
-    width: 280px;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
-  }
-  /* Map container */
-  #map {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 250px;
-    height: 200px;
-    border-radius: 10px;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
-    z-index: 1000;
-    transition: all 0.3s ease;
-  }
-  #map.retracted {
-    width: 40px;
-    height: 40px;
-    bottom: 20px;
-    right: 20px;
-    border-radius: 50%;
-    overflow: hidden;
-    cursor: pointer;
-  }
-  #toggle-map {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1001;
-    background: #ff6600;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    padding: 4px 8px;
-    cursor: pointer;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Volleyball Tournaments</title>
+
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+  
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <header>
+    <h1>🏐 Volleyball Tournaments</h1>
+    <nav>
+      <a href="submit.html" class="btn">Submit Event</a>
+      <a href="account.html" class="btn">My Account</a>
+      <a href="auth.html" class="btn">Login</a>
+    </nav>
+  </header>
 
-<header>
-  <h1>Volleyball Tournaments</h1>
-  <nav>
-    <a href="index.html">Home</a>
-    <a href="submit.html">Submit Event</a>
-    <a href="auth.html">Login / Signup</a>
-    <a href="account.html">My Account</a>
-  </nav>
-</header>
+  <main>
+    <section id="tournament-list-section">
+      <h2>Upcoming Tournaments</h2>
+      <ul id="tournament-list"></ul>
+    </section>
 
-<main>
-  <h2>Upcoming Tournaments</h2>
-  <div class="tournament-list" id="tournament-list">
-    <p style="color: #fff;">Loading tournaments...</p>
-  </div>
-</main>
+    <!-- Retractable map container -->
+    <div id="map-container">
+      <button id="toggle-map">🗺️ Show/Hide Map</button>
+      <div id="map"></div>
+    </div>
+  </main>
 
-<!-- Map container -->
-<div id="map" class="retracted"></div>
-<button id="toggle-map">📍</button>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-  import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-  import { firebaseConfig } from './config.js';
+  <!-- Firebase Config -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCfVProG4-iZ8z4r869oiBHB7OX4Fl3lMU",
+      authDomain: "volleyball-tourneys.firebaseapp.com",
+      projectId: "volleyball-tourneys",
+      storageBucket: "volleyball-tourneys.firebasestorage.app",
+      messagingSenderId: "652764056781",
+      appId: "1:652764056781:web:70f90b5a6f5357aff16d84",
+      measurementId: "G-HJF63771D7"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+  <!-- Script -->
+  <script>
+    const listEl = document.getElementById('tournament-list');
+    const mapContainer = document.getElementById('map-container');
+    const toggleBtn = document.getElementById('toggle-map');
+    const mapDiv = document.getElementById('map');
+    let mapInitialized = false;
+    let map;
+    let markers = [];
 
-  const tournamentList = document.getElementById("tournament-list");
-
-  // =========================
-  // Map setup
-  // =========================
-  const map = L.map('map', { zoomControl: false }).setView([45.5, -73.6], 4);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
-  let markers = [];
-
-  function renderTournaments(tournaments) {
-    tournamentList.innerHTML = "";
-    markers.forEach(m => map.removeLayer(m));
-    markers = [];
-
-    if(!tournaments.length){
-      tournamentList.innerHTML = `<p style="color:#fff;">No tournaments available.</p>`;
-      return;
-    }
-
-    tournaments.forEach(t => {
-      // Tournament card
-      const card = document.createElement("div");
-      card.className = "tournament-card";
-      card.innerHTML = `
-        <h3>${t.name}</h3>
-        <p><strong>Location:</strong> ${t.city}, ${t.province}</p>
-        <p><strong>Date:</strong> ${t.date}</p>
-        <p>${t.description || ""}</p>
-      `;
-      tournamentList.appendChild(card);
-
-      // Map marker
-      if(t.lat && t.lng){
-        const marker = L.marker([t.lat, t.lng])
-          .addTo(map)
-          .bindPopup(`<strong>${t.name}</strong><br>${t.city}, ${t.province}<br>${t.date}`);
-        markers.push(marker);
+    toggleBtn.addEventListener('click', () => {
+      mapDiv.classList.toggle('visible');
+      if (!mapInitialized && mapDiv.classList.contains('visible')) {
+        initMap();
+        mapInitialized = true;
       }
     });
-  }
 
-  // =========================
-  // Fetch tournaments from Firebase
-  // =========================
-  const tournamentsRef = collection(db, "tournaments");
-  const q = query(tournamentsRef, orderBy("date","asc"));
+    function initMap() {
+      map = L.map('map').setView([46.8, -71.2], 6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+      }).addTo(map);
+      loadTournaments();
+    }
 
-  onSnapshot(q, (snapshot) => {
-    const tournaments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    renderTournaments(tournaments);
-  }, (err) => {
-    tournamentList.innerHTML = `<p style="color:#fff;">Error loading tournaments: ${err.message}</p>`;
-  });
+    function loadTournaments() {
+      db.collection('tournaments').orderBy('date').get().then(snapshot => {
+        listEl.innerHTML = '';
+        markers.forEach(m => map.removeLayer(m));
+        markers = [];
 
-  // =========================
-  // Map retractable toggle
-  // =========================
-  const mapEl = document.getElementById("map");
-  const toggleBtn = document.getElementById("toggle-map");
-  toggleBtn.addEventListener("click", () => {
-    mapEl.classList.toggle("retracted");
-    map.invalidateSize();
-  });
-</script>
+        snapshot.forEach(doc => {
+          const t = doc.data();
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <h3>${t.name}</h3>
+            <p><strong>Date:</strong> ${t.date}</p>
+            <p><strong>City:</strong> ${t.city}</p>
+            <p><strong>Level:</strong> ${t.level}</p>
+            <p><strong>Organizer:</strong> ${t.organizerName} - ${t.organizerPhone}</p>
+          `;
+          listEl.appendChild(li);
 
+          if (t.lat && t.lng) {
+            const marker = L.marker([t.lat, t.lng]).addTo(map);
+            marker.bindPopup(
+              `<strong>${t.name}</strong><br>${t.address}<br>${t.date}<br>${t.level}`
+            );
+            markers.push(marker);
+          }
+        });
+      });
+    }
+
+    // Load list on page load (without map)
+    db.collection('tournaments').orderBy('date').get().then(snapshot => {
+      listEl.innerHTML = '';
+      snapshot.forEach(doc => {
+        const t = doc.data();
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <h3>${t.name}</h3>
+          <p><strong>Date:</strong> ${t.date}</p>
+          <p><strong>City:</strong> ${t.city}</p>
+          <p><strong>Level:</strong> ${t.level}</p>
+          <p><strong>Organizer:</strong> ${t.organizerName} - ${t.organizerPhone}</p>
+        `;
+        listEl.appendChild(li);
+      });
+    });
+  </script>
 </body>
 </html>
