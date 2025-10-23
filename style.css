@@ -1,4 +1,4 @@
-/* Global styles */
+/* General page layout */
 body {
   margin: 0;
   font-family: "Segoe UI", sans-serif;
@@ -31,9 +31,10 @@ header nav .btn:hover {
   background-color: #e69500;
 }
 
+/* Main content */
 main {
   padding: 1.5rem;
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
@@ -42,25 +43,60 @@ main {
   text-align: center;
 }
 
-#tournament-list {
-  list-style: none;
-  padding: 0;
+/* Tournament grid layout */
+.tournament-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-#tournament-list li {
+.tournament-card {
   background: white;
   border-radius: 10px;
   padding: 1rem;
-  margin-bottom: 1rem;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* Retractable map */
+.tournament-info h3 {
+  margin-top: 0;
+  color: #1e73be;
+  margin-bottom: 0.5rem;
+}
+
+/* Horizontal layout for details */
+.details-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.details-row p {
+  margin: 0;
+  flex: 1 1 45%;
+  min-width: 200px;
+}
+
+.org {
+  margin-top: 0.6rem;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+/* Map container (bottom right, retractable) */
 #map-container {
   position: fixed;
-  bottom: 10px;
-  right: 10px;
-  width: 350px;
+  bottom: 15px;
+  right: 15px;
+  width: 400px;
+  transition: all 0.3s ease;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+}
+
+#map-container:not(.visible) #map {
+  display: none;
 }
 
 #toggle-map {
@@ -74,13 +110,11 @@ main {
   cursor: pointer;
 }
 
-#map {
-  display: none;
-  height: 250px;
-  border-radius: 0 0 8px 8px;
-  overflow: hidden;
+#toggle-map:hover {
+  background: #e69500;
 }
 
-#map.visible {
-  display: block;
+#map {
+  height: 300px;
+  width: 100%;
 }
